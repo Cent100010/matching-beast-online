@@ -372,6 +372,34 @@
         #online-panel.match-started .online-row { align-items: center; }
         #online-panel.match-started #online-leave-btn { flex: 0 0 auto; }
     }
+
+    /* 手札カードを見やすく拡大（自分・相手の手札の両方） */
+    .hand-zone {
+        min-height: 66px;
+        gap: 4px;
+        align-items: flex-start;
+    }
+    .hand-zone .card {
+        width: 40px;
+        height: 60px;
+        font-size: 18px;
+        margin: 2px;
+        border-radius: 4px;
+        line-height: 1;
+        border-width: 2px;
+    }
+    .hand-zone .card.selected { transform: translateY(-5px); }
+    @media (max-width: 650px) {
+        .hand-zone { min-height: 54px; gap: 3px; }
+        .hand-zone .card {
+            width: 33px;
+            height: 50px;
+            font-size: 16px;
+            margin: 1px;
+            border-radius: 3px;
+        }
+        .hand-zone .card.selected { transform: translateY(-3px); }
+    }
 </style>
 </head>
 <body>

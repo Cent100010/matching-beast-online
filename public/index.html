@@ -17,7 +17,34 @@
         align-items: center;
     }
     #game-container { width: 100%; max-width: 1000px; }
-    h1 { text-align: center; margin: 0 0 10px 0; font-size: 24px; text-shadow: 1px 1px 2px #000; }
+    #game-header {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 10px;
+    }
+    #game-header h1 {
+        grid-column: 2;
+        text-align: center;
+        margin: 0;
+        font-size: 24px;
+        text-shadow: 1px 1px 2px #000;
+        white-space: nowrap;
+    }
+    #rulebook-toggle {
+        grid-column: 3;
+        justify-self: end;
+        font-size: 13px;
+        padding: 7px 10px;
+        white-space: nowrap;
+        min-width: 0;
+    }
+    @media (max-width: 650px) {
+        #game-header { grid-template-columns: minmax(0, 1fr) auto; gap: 6px; }
+        #game-header h1 { grid-column: 1; justify-self: start; font-size: 20px; white-space: normal; }
+        #rulebook-toggle { grid-column: 2; font-size: 12px; padding: 6px 8px; }
+    }
     
     #setup-panel {
         background: rgba(0,0,0,0.4);
@@ -405,7 +432,10 @@
 <body>
 
 <div id="game-container">
-    <h1>マッチングビースト</h1>
+    <div id="game-header">
+        <h1>マッチングビースト</h1>
+        <button id="rulebook-toggle" class="btn-rulebook" type="button" onclick="openRulebookModal()" aria-label="ルールブックを開く">📖 ルールブック</button>
+    </div>
     
     <section id="online-panel" aria-label="オンライン対戦">
         <h2>🌐 オンライン対戦</h2>
@@ -447,7 +477,6 @@
             <input type="checkbox" id="fast-cpu-toggle"> CPUの思考をスキップ
         </label>
         <button id="btn-start" class="btn-action" style="font-size:15px; padding:6px 16px;" onclick="startSoloGame()">CPUと1人プレイ</button>
-        <button class="btn-rulebook" style="font-size:15px; padding:6px 16px;" onclick="openRulebookModal()">📖 ルールブック</button>
     </div>
 
     <div class="npc-container" id="npcs-container"></div>

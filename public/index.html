@@ -340,6 +340,38 @@
     #online-seats { font-size:12px; color:#d9f5e3; margin-top:5px; }
     .online-seat { display:inline-block; padding:3px 7px; margin:2px; background:rgba(255,255,255,.1); border-radius:5px; }
     @media (max-width:650px) { #online-panel { padding:10px; } .online-row { align-items:stretch; } .online-row button { flex:1; min-width:130px; } #online-panel input { width:100%; max-width:none; } }
+
+    /* ゲーム開始後はオンライン設定を折りたたみ、退出ボタンだけ残す */
+    #online-panel.match-started {
+        background: transparent;
+        border: 0;
+        border-radius: 0;
+        padding: 0;
+        margin: 0 0 6px auto;
+        display: flex;
+        justify-content: flex-end;
+    }
+    #online-panel.match-started h2,
+    #online-panel.match-started .online-entry-row,
+    #online-panel.match-started #online-status,
+    #online-panel.match-started #online-seats,
+    #online-panel.match-started #online-start-btn {
+        display: none !important;
+    }
+    #online-panel.match-started .online-row {
+        justify-content: flex-end;
+        margin: 0;
+    }
+    #online-panel.match-started #online-leave-btn {
+        padding: 4px 8px;
+        font-size: 12px;
+        min-width: 0;
+    }
+    @media (max-width:650px) {
+        #online-panel.match-started { padding: 0; margin-bottom: 4px; }
+        #online-panel.match-started .online-row { align-items: center; }
+        #online-panel.match-started #online-leave-btn { flex: 0 0 auto; }
+    }
 </style>
 </head>
 <body>
@@ -349,11 +381,11 @@
     
     <section id="online-panel" aria-label="オンライン対戦">
         <h2>🌐 オンライン対戦</h2>
-        <div class="online-row">
+        <div class="online-row online-entry-row">
             <label>プレイヤー名 <input id="player-name-input" maxlength="16" value="プレイヤー" autocomplete="nickname"></label>
             <button class="btn-action" onclick="createOnlineRoom()">部屋を作る</button>
         </div>
-        <div class="online-row">
+        <div class="online-row online-entry-row">
             <label>部屋番号 <input id="room-id-input" maxlength="6" placeholder="例: A1B2C" autocapitalize="characters"></label>
             <button class="btn-pig" onclick="joinOnlineRoom()">部屋に参加</button>
         </div>
@@ -718,6 +750,7 @@ function startGame() {
     if (networkRole === 'host' && onlineRoom && !onlineRoom.started) { alert('オンライン部屋では「対戦開始（空席はCPU）」を押してください。'); return; }
     isGameStarted = true;
     isGameOver = false;
+    document.getElementById('online-panel').classList.add('match-started');
     document.getElementById('game-info').style.display = 'block';
     document.getElementById('log-box').innerHTML = '';
     if (networkRole === 'host' && onlineRoom) { onlineRoom.started = true; document.getElementById('setup-panel').style.display = 'none'; document.getElementById('online-start-btn').style.display = 'none'; }
@@ -2577,6 +2610,7 @@ function applyNetworkSnapshot(state) {
       selectedAttackerIndex = state.selectedAttackerIndex ?? null;
       isGameOver = !!state.isGameOver;
       isGameStarted = !!state.isGameStarted;
+      document.getElementById('online-panel').classList.toggle('match-started', isGameStarted);
       isFirstRound = state.isFirstRound || [true,true,true,true];
       cpuDifficulty = state.cpuDifficulty || 'counter';
       jokerRuleSetting = state.jokerRuleSetting || 'all';
@@ -2646,6 +2680,7 @@ if (typeof io === 'function') {
     onlineRoom.humans = data.players || onlineRoom.humans;
     onlineRoom.started = true;
     renderOnlineSeats(onlineRoom.humans);
+    document.getElementById('online-panel').classList.add('match-started');
     document.getElementById('online-start-btn').style.display = 'none';
     document.getElementById('setup-panel').style.display = 'none';
     setOnlineStatus(`対戦中：部屋 ${onlineRoom.id}。自分のターンに手札と操作ボタンが表示されます。`);

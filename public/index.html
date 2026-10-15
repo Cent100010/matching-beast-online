@@ -1,0 +1,2706 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>マッチングビースト</title>
+<style>
+    * { box-sizing: border-box; }
+    body {
+        font-family: 'Helvetica Neue', Arial, sans-serif;
+        background-color: #1b4d2e;
+        color: white;
+        margin: 0;
+        padding: 15px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+    #game-container { width: 100%; max-width: 1000px; }
+    h1 { text-align: center; margin: 0 0 10px 0; font-size: 24px; text-shadow: 1px 1px 2px #000; }
+    
+    #setup-panel {
+        background: rgba(0,0,0,0.4);
+        padding: 10px;
+        border-radius: 8px;
+        margin-bottom: 10px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 15px;
+        flex-wrap: wrap;
+    }
+
+    .npc-container { display: flex; gap: 10px; margin-bottom: 10px; }
+    .npc-area, .player-area { 
+        flex: 1; 
+        min-width: 0;
+        margin-bottom: 10px; 
+        padding: 10px; 
+        border-radius: 8px; 
+        background: rgba(0, 0, 0, 0.3); 
+        border: 2px solid rgba(255, 255, 255, 0.2); 
+        transition: border 0.2s, background 0.2s;
+    }
+    .my-turn { border: 2px solid #ffeb3b; background: rgba(255, 235, 59, 0.1); }
+    
+    .area-header { 
+        display: flex; 
+        justify-content: space-between; 
+        align-items: center; 
+        margin-bottom: 6px; 
+        border-bottom: 1px solid rgba(255,255,255,0.2); 
+        padding-bottom: 4px; 
+    }
+    .area-title { margin: 0; font-size: 15px; }
+    .hp-badge { font-size: 13px; font-weight: bold; color: #ffeb3b; }
+
+    .joker-badge {
+        font-size: 11px;
+        font-weight: bold;
+        padding: 2px 6px;
+        border-radius: 10px;
+        margin-right: 6px;
+        display: inline-block;
+    }
+    .joker-badge.unused {
+        background: rgba(156, 39, 176, 0.25);
+        border: 1px solid #ab47bc;
+        color: #e1bee7;
+    }
+    .joker-badge.used {
+        background: rgba(255, 255, 255, 0.1);
+        border: 1px solid #777;
+        color: #aaa;
+        text-decoration: line-through;
+    }
+
+    .card { 
+        display: inline-flex; flex-direction: column; justify-content: center; align-items: center;
+        width: 28px; height: 42px; background: white; color: black; border-radius: 3px; 
+        font-size: 14px; font-weight: bold; margin: 1px; box-shadow: 1px 1px 3px rgba(0,0,0,0.4); 
+        cursor: pointer; user-select: none; transition: transform 0.15s, border 0.15s; border: 1.5px solid transparent;
+        line-height: 0.95; padding: 0; flex-shrink: 0;
+    }
+    .card.red { color: #d00; }
+    .card.black { color: #111; }
+    .card.back { 
+        background: #2b3a4a; 
+        background-image: repeating-linear-gradient(45deg, #3a4b5c 0, #3a4b5c 10px, #2b3a4a 10px, #2b3a4a 20px);
+        border: 1px solid #fff;
+    }
+    .card.selected { border-color: #ffeb3b; transform: translateY(-4px); box-shadow: 0 3px 6px rgba(255,235,59,0.6); }
+    .card.targetable { animation: pulse 1s infinite alternate; border-color: #ffeb3b; box-shadow: 0 0 8px #ffeb3b; }
+
+    .unit {
+        display: inline-flex;
+        flex-direction: column;
+        justify-content: space-between;
+        align-items: center;
+        padding: 3px 5px;
+        border-radius: 5px;
+        background: rgba(255,255,255,0.15);
+        border: 1.5px solid rgba(255,255,255,0.4);
+        min-width: 72px;
+        height: 68px;
+        font-size: 10px;
+        font-weight: bold;
+        cursor: pointer;
+        transition: all 0.2s;
+        user-select: none;
+        position: relative;
+    }
+    .unit.spade { border-color: #3498db; background: rgba(52, 152, 219, 0.25); color: #81d4fa; }
+    .unit.heart { border-color: #e74c3c; background: rgba(231, 76, 60, 0.25); color: #ff8a80; }
+    .unit.club { border-color: #2ecc71; background: rgba(46, 204, 113, 0.25); color: #a5d6a7; }
+    .unit.diamond { border-color: #e67e22; background: rgba(230, 126, 34, 0.25); color: #ffcc80; }
+    .unit.pig { border-color: #e91e63; background: rgba(233, 30, 99, 0.25); color: #f8bbd0; }
+    .unit.joker-unit { border-color: #ab47bc; background: rgba(171, 71, 188, 0.35); color: #e1bee7; box-shadow: 0 0 6px rgba(171, 71, 188, 0.6); }
+    .unit.gluttony-unit { border-color: #ff9800; background: rgba(255, 152, 0, 0.35); color: #ffe0b2; box-shadow: 0 0 6px rgba(255, 152, 0, 0.6); }
+    .unit.advent-unit { border-color: #009688; background: rgba(0, 150, 136, 0.35); color: #80cbc4; box-shadow: 0 0 6px rgba(0, 150, 136, 0.6); }
+    
+    .unit.tapped { opacity: 0.5; transform: rotate(10deg); }
+    .unit.targetable { animation: pulse 1s infinite alternate; border-color: #ffeb3b; box-shadow: 0 0 10px #ffeb3b; }
+    .unit.tapped.targetable { animation: pulse-tapped 1s infinite alternate; }
+
+    .revealed-cards {
+        font-size: 9px;
+        background: rgba(0, 0, 0, 0.5);
+        padding: 1px 3px;
+        border-radius: 3px;
+        color: #fff;
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        margin: 1px 0;
+        white-space: nowrap;
+    }
+
+    .unit.attacking-selected {
+        border-color: #ff1744 !important;
+        box-shadow: 0 0 10px #ff1744, inset 0 0 5px rgba(255, 23, 68, 0.4);
+        transform: translateY(-2px) scale(1.03);
+    }
+    .unit.tapped.attacking-selected {
+        transform: rotate(10deg) translateY(-2px) scale(1.03);
+        opacity: 1 !important;
+    }
+
+    .unit.attacking-selected::after {
+        content: "⚔攻撃用";
+        position: absolute;
+        top: -7px;
+        right: -4px;
+        background: #ff1744;
+        color: white;
+        font-size: 7px;
+        padding: 1px 3px;
+        border-radius: 3px;
+        font-weight: bold;
+    }
+
+    .unit.protected { opacity: 0.75; }
+    .unit.protected::after {
+        content: "🛡️護衛中";
+        position: absolute;
+        top: -7px;
+        left: -4px;
+        background: #795548;
+        color: white;
+        font-size: 7px;
+        padding: 1px 3px;
+        border-radius: 3px;
+        font-weight: bold;
+    }
+
+    .unit.too-strong { opacity: 0.8; }
+    .unit.too-strong::after {
+        content: "🛡高防御";
+        position: absolute;
+        top: -7px;
+        right: -4px;
+        background: #546e7a;
+        color: white;
+        font-size: 7px;
+        padding: 1px 3px;
+        border-radius: 3px;
+        font-weight: bold;
+    }
+
+    @keyframes pulse {
+        0% { transform: scale(1); }
+        100% { transform: scale(1.05); }
+    }
+
+    @keyframes pulse-tapped {
+        0% { transform: rotate(10deg) scale(1); }
+        100% { transform: rotate(10deg) scale(1.05); }
+    }
+
+    .hand-zone {
+        min-height: 44px;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 2px;
+        margin-top: 4px;
+    }
+
+    .board-section { display: flex; gap: 10px; margin-top: 6px; width: 100%; }
+    
+    .zone { 
+        flex: 1 1 0; 
+        padding: 6px; 
+        height: 95px; 
+        max-height: 95px; 
+        min-height: 95px;
+        min-width: 0; 
+        width: 100%;
+        overflow-y: auto;
+        overscroll-behavior-y: contain;
+        border: 1px dashed rgba(255,255,255,0.3); 
+        border-radius: 6px; 
+        background: rgba(0,0,0,0.15); 
+        display: flex;
+        flex-wrap: wrap;
+        align-content: flex-start;
+        gap: 4px;
+        flex-shrink: 0;
+    }
+    .zone-title { font-size: 11px; color: #ccc; margin-bottom: 4px; width: 100%; display: block; flex-shrink: 0; }
+
+    #center-area { text-align: center; margin: 10px 0; min-height: 70px; }
+    #log-box { 
+        width: 100%; 
+        height: 125px; 
+        background: rgba(0,0,0,0.6); 
+        border: 1px solid #666; 
+        border-radius: 6px; 
+        overflow-y: auto; 
+        padding: 8px; 
+        font-size: 12px; 
+        font-family: monospace; 
+        line-height: 1.4; 
+        margin-bottom: 10px; 
+        box-sizing: border-box; 
+        white-space: pre-wrap; 
+    }
+    .log-msg { margin: 2px 0; }
+    .log-important { color: #ffeb3b; font-weight: bold; }
+    .log-attack { color: #ff5252; font-weight: bold; }
+    .log-summon { color: #80deea; font-weight: bold; }
+
+    #graveyard-top {
+        display: inline-flex;
+        align-items: center;
+        height: 48px;
+        vertical-align: middle;
+    }
+
+    .graveyard-preview {
+        display: inline-flex;
+        align-items: center;
+        gap: 3px;
+        vertical-align: middle;
+        margin-left: 5px;
+        padding-bottom: 6px;
+    }
+    .graveyard-card-wrapper {
+        position: relative;
+        display: inline-block;
+    }
+    .graveyard-label {
+        position: absolute;
+        bottom: -5px;
+        left: 50%;
+        transform: translateX(-50%);
+        font-size: 8px;
+        background: rgba(0,0,0,0.7);
+        padding: 0 2px;
+        border-radius: 2px;
+        white-space: nowrap;
+        color: #ffeb3b;
+        pointer-events: none;
+    }
+
+    .controls { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px; align-items: center; }
+    button, select { padding: 6px 10px; font-size: 12px; font-weight: bold; border-radius: 5px; border: none; background: #e0e0e0; color: #333; transition: 0.2s; }
+    button { cursor: pointer; }
+    button:hover:not(:disabled) { background: #fff; transform: translateY(-1px); }
+    button:disabled { background: #555; color: #888; cursor: not-allowed; opacity: 0.6; }
+    
+    .btn-action { background: #2196f3; color: white; }
+    .btn-action:hover:not(:disabled) { background: #2196f3; filter: brightness(1.1); }
+    
+    .btn-pig { background: #e91e63; color: white; }
+    .btn-pig:hover:not(:disabled) { background: #e91e63; filter: brightness(1.1); }
+
+    .btn-joker { background: #9c27b0; color: white; }
+    .btn-joker:hover:not(:disabled) { background: #9c27b0; filter: brightness(1.1); }
+
+    .btn-gluttony { background: #e67e22; color: white; }
+    .btn-gluttony:hover:not(:disabled) { background: #e67e22; filter: brightness(1.1); }
+
+    .btn-advent { background: #009688; color: white; }
+    .btn-advent:hover:not(:disabled) { background: #009688; filter: brightness(1.1); }
+
+    .btn-attack { background: #ff5722; color: white; }
+    .btn-attack:hover:not(:disabled) { background: #ff5722; filter: brightness(1.1); }
+    
+    .btn-rulebook { background: #ff9800; color: white; }
+    .btn-rulebook:hover:not(:disabled) { background: #ff9800; filter: brightness(1.1); }
+
+    .btn-highlight {
+        background: #ffeb3b !important;
+        color: #000 !important;
+        animation: pulse 0.8s infinite alternate !important;
+        box-shadow: 0 0 12px #ffeb3b, inset 0 0 5px #fff !important;
+        border: 2px solid #fff !important;
+    }
+
+    .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.75); display: flex; justify-content: center; align-items: center; z-index: 1000; }
+    .modal-content { background: #222; padding: 20px; border-radius: 10px; max-width: 600px; width: 90%; color: white; border: 2px solid #ff9800; max-height: 85vh; overflow-y: auto; }
+
+    @media (max-width: 650px) {
+        body { padding: 8px; }
+        #setup-panel { flex-direction: column; align-items: stretch; gap: 8px; }
+        .npc-container { flex-direction: column; gap: 8px; }
+        .board-section { flex-direction: column; gap: 6px; width: 100%; }
+        .hand-zone { min-height: 38px; }
+        .zone { flex: none; height: 90px; max-height: 90px; min-height: 90px; width: 100%; flex-shrink: 0; }
+        .card { width: 24px; height: 36px; font-size: 12px; margin: 1px; border-radius: 2px; line-height: 0.9; }
+        .controls button { width: 100%; }
+    }
+
+    #online-panel { background: rgba(0,0,0,.42); border: 1px solid rgba(255,255,255,.25); border-radius: 10px; padding: 12px; margin: 0 auto 10px; }
+    #online-panel h2 { margin: 0 0 8px; font-size: 17px; color: #ffeb3b; }
+    .online-row { display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin:6px 0; }
+    .online-row label { display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
+    #online-panel input { width:140px; max-width:45vw; border-radius:5px; padding:7px; border:1px solid #999; }
+    #online-panel button { padding:7px 11px; }
+    #online-status { font-size:13px; line-height:1.5; color:#eee; margin-top:6px; overflow-wrap:anywhere; }
+    #online-seats { font-size:12px; color:#d9f5e3; margin-top:5px; }
+    .online-seat { display:inline-block; padding:3px 7px; margin:2px; background:rgba(255,255,255,.1); border-radius:5px; }
+    @media (max-width:650px) { #online-panel { padding:10px; } .online-row { align-items:stretch; } .online-row button { flex:1; min-width:130px; } #online-panel input { width:100%; max-width:none; } }
+</style>
+</head>
+<body>
+
+<div id="game-container">
+    <h1>マッチングビースト</h1>
+    
+    <section id="online-panel" aria-label="オンライン対戦">
+        <h2>🌐 オンライン対戦</h2>
+        <div class="online-row">
+            <label>プレイヤー名 <input id="player-name-input" maxlength="16" value="プレイヤー" autocomplete="nickname"></label>
+            <button class="btn-action" onclick="createOnlineRoom()">部屋を作る</button>
+        </div>
+        <div class="online-row">
+            <label>部屋番号 <input id="room-id-input" maxlength="6" placeholder="例: A1B2C" autocapitalize="characters"></label>
+            <button class="btn-pig" onclick="joinOnlineRoom()">部屋に参加</button>
+        </div>
+        <div id="online-status" role="status">部屋を作ると、番号を共有して友達を招待できます。1人でCPU戦もできます。</div>
+        <div id="online-seats"></div>
+        <div class="online-row">
+            <button id="online-start-btn" class="btn-attack" onclick="startOnlineMatch()" disabled>対戦開始（空席はCPU）</button>
+            <button id="online-leave-btn" onclick="leaveOnlineRoom()" style="display:none;">部屋を退出</button>
+        </div>
+    </section>
+
+    <div id="setup-panel">
+        <label>初期HP: 
+            <input type="number" id="initial-hp-input" value="10" min="1" style="width: 50px; padding: 4px; font-size: 14px; text-align: center;"> 点
+        </label>
+        <label>CPU思考傾向: 
+            <select id="cpu-difficulty-select" style="padding: 4px 8px; font-size: 13px;">
+                <option value="counter" selected>🛡️ 温存・逆転型 (カウンターAI)</option>
+                <option value="hard">🔥 ハード (手強い攻撃型)</option>
+                <option value="normal">🟢 ノーマル (標準)</option>
+            </select>
+        </label>
+        <label>🃏/🍖/🦅特殊枠: 
+            <select id="joker-rule-select" style="padding: 4px 8px; font-size: 13px;">
+                <option value="none">🚫 なし</option>
+                <option value="joker_only">🃏 ジョーカーのみ</option>
+                <option value="all" selected>🃏🍖🦅 全てあり</option>
+            </select>
+        </label>
+        <label style="cursor: pointer; user-select: none;">
+            <input type="checkbox" id="fast-cpu-toggle"> CPUの思考をスキップ
+        </label>
+        <button id="btn-start" class="btn-action" style="font-size:15px; padding:6px 16px;" onclick="startSoloGame()">CPUと1人プレイ</button>
+        <button class="btn-rulebook" style="font-size:15px; padding:6px 16px;" onclick="openRulebookModal()">📖 ルールブック</button>
+    </div>
+
+    <div class="npc-container" id="npcs-container"></div>
+
+    <div id="center-area">
+        <div id="game-info" style="display: none;">
+            <span style="font-size: 15px; font-weight: bold; color: #ffeb3b; margin-right: 15px;" id="turn-info"></span>
+            山札: <span id="deck-count" style="font-size:15px; font-weight:bold;">0</span> 枚 | 
+            墓地: <span id="graveyard-count" style="font-size:15px; font-weight:bold;">0</span> 枚 
+            <span id="graveyard-top"></span>
+            <div style="font-size: 11px; color: #ccc; margin-top: 5px;">相性: ♠️ ＞ ❤️ ＞ ♣️ ＞ ♦️ ＞ ♠️ (有利側に+4補正 / ブタは無属性)</div>
+        </div>
+    </div>
+
+    <div id="log-box"></div>
+
+    <div id="player-container"></div>
+</div>
+
+<div id="rulebook-modal" class="modal-overlay" style="display: none;">
+    <div class="modal-content">
+        <h2 style="color: #ffeb3b; margin-top: 0; text-align: center;">📖 公式ルールブック</h2>
+        <div style="font-size: 13px; line-height: 1.6;">
+            <h3 style="color: #ffeb3b; border-bottom: 1px solid #ffeb3b; padding-bottom: 3px; margin-top: 5px;">🔄 1ターンの基本の流れ</h3>
+            <p>自分のターンは以下の<b>3つのフェイズ</b>を順番に進行します。</p>
+            <ol style="padding-left: 20px; margin-bottom: 10px;">
+                <li><b>【1. ドローフェイズ】</b><br>
+                    「山札から引く」「相手の手札から1枚引く（※1ターン目禁止）」「墓地の上2枚から1枚選んで引く」のいずれかを選択して1枚手札に加えます。</li>
+                <li><b>【2. 召喚フェイズ】（1ターンに1度）</b><br>
+                    手札2枚を消費して<b>「ビースト」または「ブタ🐷」を1体だけ召喚</b>できます（スキップ可。ただし手札8枚以上の場合は強制召喚）。ダメージを受けている最下位プレイヤーは1ゲームに1度だけ<b>「特殊枠ビースト（🃏/🍖/🦅）」</b>を召喚可能です。</li>
+                <li><b>【3. 攻撃フェイズ】（1ターンに1度）</b><br>
+                    自分の場のユニット1体を選び、<b>「相手ユニットへの攻撃」または「ダイレクトアタック」を1回だけ実行</b>できます（スキップ可。※1ターン目は攻撃制限あり）。
+                    <ul style="padding-left: 15px; margin-top: 4px;">
+                        <li><b>相手の場にユニットがいる場合：</b> 相手の「ビースト」または「ブタ」を指定して戦闘（※前衛護衛ルールあり）。</li>
+                        <li><b>相手の場がガラ空きの場合：</b> 相手プレイヤーを直接攻撃（ダイレクトアタック：一律2ダメージ）。</li>
+                    </ul>
+                </li>
+            </ol>
+
+            <h3 style="color: #00bcd4; margin-bottom: 5px;">【ユニット一覧と召喚コスト】</h3>
+            <ul>
+                <li><strong>ビースト (手札2枚):</strong> 同色・同数字ペア。攻撃力・防御力＝数字(1〜8)。1枚目のスートが属性になる。</li>
+                <li><strong>ブタ 🐷 (任意の手札2枚):</strong> 無属性。<b>攻撃力・防御力 0.5</b>。</li>
+                <li><strong>ジョーカービースト 🃏 (手札1枚＋山札ガチャ1枚):</strong> <b>【ピンチ時最下位限定ルール・1ゲーム1回（共通枠）・山札1枚以上が必要】</b><br>
+                <b>「ダメージを1以上受けている」かつ「最下位（同率含む）」</b>で召喚可能。手札1枚を選択し、山札から1枚めくったカードの属性・数字のビーストを召喚！撃破されても<b>持ち主へのダメージは0点</b>。</li>
+                <li><strong>グラトニービースト 🍖 (手札1枚＋相手の手札1枚):</strong> <b>【山札1枚以上が必要】</b><br>
+                自分の手札1枚と相手の手札1枚を抜き取ってペアにし召喚（引き抜かれた相手は山札から1枚補充）。属性と攻撃力は抜き取ったカードに準拠。<b>元の防御力は8</b>として扱われる。召喚ターン以外の自分のターン終了時に自分の場のユニット1体を墓地に送る必要あり。撃破されても<b>持ち主へのダメージは0点</b>。</li>
+                <li><strong>アドベントビースト 🦅 (手札1枚＋墓地選択1枚):</strong><br>
+                <b>【残り生存者3人以上かつ墓地ありの時のみ】</b><br>
+                手札1枚と墓地の上2枚から1枚を選びペアにし召喚。属性と攻撃力・防御力は選んだ墓地カードに準拠。召喚後、残った墓地と山札を合わせてシャッフル。<b>召喚したターンの終了時に攻撃力0・防御力0になる（属性相性は適用される）</b>。撃破・効果破壊問わず<b>被ダメージは常に0点</b>。</li>
+            </ul>
+
+            <h3 style="color: #00bcd4; margin-bottom: 5px;">【前衛ビースト（護衛）ルール】</h3>
+            <p>場に「ビースト（特殊ビースト含む）」が存在するプレイヤーの<b>「ブタ🐷」は攻撃対象に選ぶことができません</b>。相手のブタを攻撃するには、まず相手のビーストをすべて撃破する必要があります。</p>
+
+            <h3 style="color: #00bcd4; margin-bottom: 5px;">【属性相性】</h3>
+            <p><b>♠️ ＞ ❤️ ＞ ♣️ ＞ ♦️ ＞ ♠️</b><br>
+            攻撃・防御を問わず、<b>有利な側の数値に+4の補正</b>が入ります（※ブタは無属性）。</p>
+
+            <h3 style="color: #00bcd4; margin-bottom: 5px;">【戦闘とダメージ・属性効果】</h3>
+            <ul>
+                <li><strong>撃破ダメージ:</strong> ユニットが戦闘で撃破された場合、ビースト・ブタ問わず<b>持ち主が1ダメージ</b>を受け、カードは墓地へ送られます（※特殊枠ビーストは被ダメージ0点）。</li>
+                <li><strong>ダイレクトアタック:</strong> 場がガラ空きの相手へ一律<b>2ダメージ</b>。</li>
+                <li><strong>♠️スペード効果:</strong> スペードのビーストは<b>攻撃力・防御力が常時+1</b>されます（グラトニーの場合も同様）。</li>
+                <li><strong>❤️ハート効果:</strong> 相手からの攻撃を1度だけ無効化（タップ状態になる）。</li>
+                <li><strong>♦️ダイヤ効果:</strong> 相手ユニット撃破時に<b>追加1ダメージ！</b></li>
+                <li><strong>♣️クラブ効果:</strong> ダイレクトアタック成功時に発動。「1体効果破壊」または「1ドロー」を選択。</li>
+            </ul>
+
+            <h3 style="color: #00bcd4; margin-bottom: 5px;">【山札切れ時の処理】</h3>
+            <p>山札からカードを引く時に山札が0枚の場合、全員の手札、墓地を全て山札にしてシャッフルし、生存プレイヤー全員に手札を6枚配り終えた後、その後山札から1枚引きます。<br>
+            生存プレイヤー全員に手札を配りきれなかった場合、または配りきったけど山札が0枚の場合は、場のカードを含む全てのカードを山札にしてシャッフルし、生存プレイヤー全員に手札を6枚配り終えた後、その後山札から1枚引きます。</p>
+        </div>
+        <button onclick="closeRulebookModal()" style="width: 100%; padding: 10px; margin-top: 15px; font-weight: bold; background: #ff9800; color: white;">閉じる</button>
+    </div>
+</div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script>
+const SUITS = ['spade', 'club', 'heart', 'diamond'];
+const SUIT_ICONS = { spade: '♠️', heart: '❤️', club: '♣️', diamond: '♦️' };
+const SUIT_ORDER = { spade: 0, club: 1, heart: 2, diamond: 3 };
+const SUIT_COLOR_GROUP = { spade: 0, club: 0, heart: 1, diamond: 1 }; 
+const BLACK_SUITS = ['spade', 'club'];
+const RED_SUITS = ['heart', 'diamond'];
+
+let deck = [];
+let graveyard = [];
+let players = [];
+let turnIndex = 0;
+let currentPhase = 'DRAW_CHOICE'; 
+let selectedHandIndices = [];
+let selectedAttackerIndex = null;
+let isFirstRound = [true, true, true, true];
+let isGameOver = false;
+let isGameStarted = false;
+let cpuDifficulty = 'counter';
+let jokerRuleSetting = 'all';
+let gameStartHp = 10;
+let networkRole = 'solo'; // solo | host | client
+let localPlayerId = 0;
+let onlineRoom = null;
+let remoteStateApplying = false;
+let socket = null;
+let remoteActionSeat = null;
+let originalBrowserAlert = null;
+
+const cpuSleep = async (ms) => {
+    if (isGameOver) return;
+    if (document.getElementById('fast-cpu-toggle').checked) return;
+    await new Promise(resolve => setTimeout(resolve, ms));
+};
+
+function openRulebookModal() { document.getElementById('rulebook-modal').style.display = 'flex'; }
+function closeRulebookModal() { document.getElementById('rulebook-modal').style.display = 'none'; }
+
+function addLog(msg, type = 'normal') {
+    const box = document.getElementById('log-box');
+    if (!box) return;
+    const div = document.createElement('div');
+    div.className = 'log-msg' + (type === 'important' ? ' log-important' : type === 'attack' ? ' log-attack' : type === 'summon' ? ' log-summon' : '');
+    div.innerText = msg;
+    box.appendChild(div);
+    requestAnimationFrame(() => { box.scrollTop = box.scrollHeight; });
+}
+
+function createDeck() {
+    deck = [];
+    graveyard = [];
+    for (let set = 0; set < 2; set++) {
+        for (let suit of SUITS) {
+            for (let val = 1; val <= 8; val++) {
+                deck.push({ suit, val, id: Math.random() });
+            }
+        }
+    }
+    shuffle(deck);
+}
+
+function shuffle(arr) {
+    for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+}
+
+function sortHand(hand) {
+    hand.sort((a, b) => {
+        const colorDiff = SUIT_COLOR_GROUP[a.suit] - SUIT_COLOR_GROUP[b.suit];
+        if (colorDiff !== 0) return colorDiff;
+        if (a.val !== b.val) return a.val - b.val;
+        return SUIT_ORDER[a.suit] - SUIT_ORDER[b.suit];
+    });
+}
+
+function isSameColor(s1, s2) {
+    return (BLACK_SUITS.includes(s1) && BLACK_SUITS.includes(s2)) ||
+           (RED_SUITS.includes(s1) && RED_SUITS.includes(s2));
+}
+
+function checkPairWithHand(hand, card) {
+    if (!card || !hand || hand.length === 0) return false;
+    return hand.some(hCard => hCard.val === card.val && isSameColor(hCard.suit, card.suit));
+}
+
+function canMakePairFromGraveyard(hand, graveyard) {
+    if (!graveyard || graveyard.length === 0 || !hand || hand.length === 0) return false;
+    const topCard = graveyard[graveyard.length - 1];
+    if (checkPairWithHand(hand, topCard)) return true;
+    if (graveyard.length >= 2) {
+        const nextCard = graveyard[graveyard.length - 2];
+        if (checkPairWithHand(hand, nextCard)) return true;
+    }
+    return false;
+}
+
+function isLowestHp(p) {
+    const alivePlayers = players.filter(pl => pl.alive);
+    if (alivePlayers.length === 0) return false;
+
+    const startHp = gameStartHp;
+
+    if (p.hp >= startHp) return false;
+
+    const minHp = Math.min(...alivePlayers.map(pl => pl.hp));
+    return p.hp === minHp;
+}
+
+function canSummonJoker(p) {
+    if (jokerRuleSetting === 'none') return false;
+    if (p.isJokerUsed) return false;
+    if (!isLowestHp(p)) return false;
+    if (p.hand.length < 1) return false;
+    if (deck.length < 1) return false; // 山札が0枚の時は召喚不可
+    return true;
+}
+
+function canSummonGluttony(p) {
+    if (jokerRuleSetting !== 'all') return false;
+    if (p.isJokerUsed) return false;
+    if (!isLowestHp(p)) return false;
+    if (p.hand.length < 1) return false;
+    if (deck.length < 1) return false; // 山札が0枚の時は召喚不可
+    const opponentsWithCards = players.filter(pl => pl.id !== p.id && pl.alive && pl.hand.length > 0);
+    if (opponentsWithCards.length === 0) return false;
+    return true;
+}
+
+function canSummonAdvent(p) {
+    if (jokerRuleSetting !== 'all') return false;
+    if (p.isJokerUsed) return false;
+    if (!isLowestHp(p)) return false;
+    if (p.hand.length < 1) return false;
+    const aliveCount = players.filter(pl => pl.alive).length;
+    if (aliveCount < 3) return false;
+    if (graveyard.length === 0) return false;
+    return true;
+}
+
+function initPlayers() {
+    const inputVal = parseFloat(document.getElementById('initial-hp-input').value);
+    const startHp = isNaN(inputVal) || inputVal < 1 ? 10 : inputVal;
+    gameStartHp = startHp;
+    document.getElementById('initial-hp-input').value = startHp;
+    cpuDifficulty = document.getElementById('cpu-difficulty-select').value;
+    jokerRuleSetting = document.getElementById('joker-rule-select').value;
+
+    const humanSeats = (networkRole === 'host' && onlineRoom && Array.isArray(onlineRoom.humans))
+        ? onlineRoom.humans : [{ id: 0, name: 'あなた' }];
+    players = [0, 1, 2, 3].map(id => {
+        const human = humanSeats.find(seat => seat.id === id);
+        return {
+            id,
+            name: human ? human.name : `CPU ${id}`,
+            hp: startHp, hand: [], field: [], isCPU: !human,
+            alive: true, isJokerUsed: false
+        };
+    });
+    isFirstRound = [true, true, true, true];
+}
+
+function drawCardFromDeckOnly(p) {
+    if (deck.length === 0) {
+        addLog("⚠️ 山札切れ！墓地と全員の手札を回収して山札を再構成します。", 'important');
+        let recycled = [...graveyard];
+        graveyard = [];
+        for (let pl of players) {
+            recycled.push(...pl.hand);
+            pl.hand = [];
+        }
+        deck = recycled;
+        shuffle(deck);
+
+        const alivePlayers = players.filter(pl => pl.alive);
+        const requiredCards = (alivePlayers.length * 6) + 1;
+
+        if (deck.length < requiredCards) {
+            addLog("⚠ 手札とドロー分を配りきれないため、全プレイヤーの場のビースト・ブタも回収して山札を配り直します！", 'important');
+            for (let pl of players) {
+                if (pl.alive) {
+                    for (let u of pl.field) {
+                        if (u.cards) deck.push(...u.cards);
+                    }
+                    pl.field = [];
+                }
+            }
+            shuffle(deck);
+        }
+
+        for (let pl of alivePlayers) {
+            for (let i = 0; i < 6; i++) {
+                if (deck.length > 0) pl.hand.push(deck.pop());
+            }
+            sortHand(pl.hand);
+        }
+    }
+    if (deck.length > 0) {
+        const card = deck.pop();
+        p.hand.push(card);
+        sortHand(p.hand);
+        return card;
+    }
+    return null;
+}
+
+function performDraw(p, source, targetPId = null, cardIdx = null, gyChoice = 0) {
+    let card = null;
+    if (source === 'deck') {
+        card = drawCardFromDeckOnly(p);
+    } else if (source === 'steal') {
+        const targetP = players[targetPId];
+        if (targetP && targetP.hand.length > 0) {
+            const idx = cardIdx !== null ? cardIdx : Math.floor(Math.random() * targetP.hand.length);
+            card = targetP.hand.splice(idx, 1)[0];
+            p.hand.push(card);
+            sortHand(p.hand);
+            drawCardFromDeckOnly(targetP);
+        }
+    } else if (source === 'graveyard') {
+        if (graveyard.length > 0) {
+            let pickedCard = null;
+            if (graveyard.length >= 2 && gyChoice === 1) {
+                pickedCard = graveyard.splice(graveyard.length - 2, 1)[0];
+                card = pickedCard;
+                const cardInfo = (networkRole === 'solo' && p.id === 0 && card) ? ` [${SUIT_ICONS[card.suit]}${card.val}]` : '';
+                addLog(`🪦 ${p.name} は墓地の「その次のカード」からカード${cardInfo}を引いた！`, 'summon');
+            } else {
+                pickedCard = graveyard.pop();
+                card = pickedCard;
+                const cardInfo = (networkRole === 'solo' && p.id === 0 && card) ? ` [${SUIT_ICONS[card.suit]}${card.val}]` : '';
+                addLog(`🪦 ${p.name} は墓地の一番上からカード${cardInfo}を引いた！`, 'summon');
+            }
+
+            p.hand.push(card);
+            sortHand(p.hand);
+
+            deck.push(...graveyard);
+            graveyard = [];
+            shuffle(deck);
+            addLog(`𔔀 残りの墓地カードが山札に全て加えられ、シャッフルされた。`, 'important');
+        }
+    }
+    return card;
+}
+
+function startGame() {
+    if (networkRole === 'client') return;
+    if (networkRole === 'host' && onlineRoom && !onlineRoom.started) { alert('オンライン部屋では「対戦開始（空席はCPU）」を押してください。'); return; }
+    isGameStarted = true;
+    isGameOver = false;
+    document.getElementById('game-info').style.display = 'block';
+    document.getElementById('log-box').innerHTML = '';
+    if (networkRole === 'host' && onlineRoom) { onlineRoom.started = true; document.getElementById('setup-panel').style.display = 'none'; document.getElementById('online-start-btn').style.display = 'none'; }
+    initPlayers();
+    createDeck();
+    
+    const diffText = cpuDifficulty === 'counter' ? '🛡 温存・逆転型' : (cpuDifficulty === 'hard' ? '🔥 ハード' : '🟢 ノーマル');
+    const jokerText = jokerRuleSetting === 'all' ? '🃏🍖🦅 全てあり' : (jokerRuleSetting === 'joker_only' ? '🃏 ジョーカーのみ' : '🚫 なし');
+    addLog(`ゲームを開始します！(CPU思考: ${diffText} / 特殊ルール: ${jokerText})`, 'important');
+    
+    for (let p of players) {
+        for (let i = 0; i < 7; i++) drawCardFromDeckOnly(p);
+    }
+    
+    turnIndex = 0;
+    renderBoard();
+    startTurn();
+}
+
+async function startTurn() {
+    if (isGameOver) return;
+    const p = players[turnIndex];
+    if (!p.alive) {
+        nextTurn();
+        return;
+    }
+
+    addLog(`【${p.name} のターン】`, 'important');
+
+    if (p.isCPU) {
+        await cpuDraw(p);
+        selectedHandIndices = [];
+        selectedAttackerIndex = null;
+        currentPhase = 'SUMMON';
+        renderBoard();
+        await cpuSleep(600);
+        await cpuPlaySummon(p);
+    } else {
+        selectedHandIndices = [];
+        selectedAttackerIndex = null;
+        currentPhase = 'DRAW_CHOICE';
+        renderBoard();
+    }
+}
+
+async function cpuDraw(cpu) {
+    const livingOpponents = players.filter(pl => pl.id !== cpu.id && pl.alive && pl.hand.length > 0);
+    const canGraveyard = graveyard.length > 0;
+    const isFirstTurn = isFirstRound[turnIndex];
+
+    let gyPairChoice = -1;
+    if (canGraveyard) {
+        if (checkPairWithHand(cpu.hand, graveyard[graveyard.length - 1])) {
+            gyPairChoice = 0;
+        } else if (graveyard.length >= 2 && checkPairWithHand(cpu.hand, graveyard[graveyard.length - 2])) {
+            gyPairChoice = 1;
+        }
+    }
+
+    if (cpuDifficulty === 'counter') {
+        if (gyPairChoice !== -1) {
+            performDraw(cpu, 'graveyard', null, null, gyPairChoice);
+            return;
+        }
+        if (canGraveyard) {
+            let bestGyChoice = -1;
+            let bestVal = 0;
+            graveyard.slice(-2).reverse().forEach((c, idx) => {
+                const score = c.val + (c.suit === 'spade' ? 2 : 0);
+                if (score > bestVal) {
+                    bestVal = score;
+                    bestGyChoice = idx; 
+                }
+            });
+
+            if (bestVal >= 6) {
+                performDraw(cpu, 'graveyard', null, null, bestGyChoice);
+                return;
+            }
+        }
+        if (!isFirstTurn && livingOpponents.length > 0 && cpu.hand.length < 6) {
+            livingOpponents.sort((a, b) => b.hand.length - a.hand.length);
+            if (livingOpponents[0].hand.length >= 4) {
+                const targetP = livingOpponents[0];
+                const cardIdx = Math.floor(Math.random() * targetP.hand.length);
+                const card = performDraw(cpu, 'steal', targetP.id, cardIdx);
+                const cardInfo = (networkRole === 'solo' && targetP.id === 0 && card) ? ` [${SUIT_ICONS[card.suit]}${card.val}]` : '';
+                addLog(`✨ ${cpu.name} は ${targetP.name} の手札からカード${cardInfo}を奪いリソースを蓄えた！`, 'summon');
+                addLog(`🔄 ${targetP.name} は山札からカードを1枚補充した。`);
+                return;
+            }
+        }
+        performDraw(cpu, 'deck');
+        addLog(`📥 ${cpu.name} は山札からカードを1枚引いた。`, 'summon');
+        return;
+    } else if (cpuDifficulty === 'hard') {
+        if (gyPairChoice !== -1) {
+            performDraw(cpu, 'graveyard', null, null, gyPairChoice);
+            return;
+        }
+        if (!isFirstTurn && livingOpponents.length > 0) {
+            livingOpponents.sort((a, b) => b.hand.length - a.hand.length || b.hp - a.hp);
+            if (livingOpponents[0].hand.length >= 4 || (!livingOpponents[0].isCPU && livingOpponents[0].hand.length >= 3)) {
+                const targetP = livingOpponents[0];
+                const cardIdx = Math.floor(Math.random() * targetP.hand.length);
+                const card = performDraw(cpu, 'steal', targetP.id, cardIdx);
+                const cardInfo = (networkRole === 'solo' && targetP.id === 0 && card) ? ` [${SUIT_ICONS[card.suit]}${card.val}]` : '';
+                addLog(`✨ ${cpu.name} は ${targetP.name} の手札からカード${cardInfo}を1枚引いた！`, 'summon');
+                addLog(`🔄 ${targetP.name} は山札からカードを1枚補充した。`);
+                return;
+            }
+        }
+        if (canGraveyard) {
+            let gyChoice = 0;
+            if (graveyard.length >= 2) {
+                const topCard = graveyard[graveyard.length - 1];
+                const nextCard = graveyard[graveyard.length - 2];
+                if (nextCard.val > topCard.val) gyChoice = 1;
+            }
+            const picked = (gyChoice === 1) ? graveyard[graveyard.length - 2] : graveyard[graveyard.length - 1];
+            if (picked.val >= 5) {
+                performDraw(cpu, 'graveyard', null, null, gyChoice);
+                return;
+            }
+        }
+        performDraw(cpu, 'deck');
+        addLog(`📥 ${cpu.name} は山札からカードを1枚引いた。`, 'summon');
+        return;
+    } else {
+        if (gyPairChoice !== -1 && Math.random() < 0.8) {
+            performDraw(cpu, 'graveyard', null, null, gyPairChoice);
+            return;
+        }
+        let choices = ['deck'];
+        if (!isFirstTurn && livingOpponents.length > 0) choices.push('steal');
+        if (canGraveyard) choices.push('graveyard');
+
+        const choice = choices[Math.floor(Math.random() * choices.length)];
+
+        if (choice === 'steal') {
+            livingOpponents.sort((a, b) => b.hand.length - a.hand.length || b.hp - a.hp);
+            const targetP = livingOpponents[0];
+            const cardIdx = Math.floor(Math.random() * targetP.hand.length);
+            const card = performDraw(cpu, 'steal', targetP.id, cardIdx);
+            const cardInfo = (networkRole === 'solo' && targetP.id === 0 && card) ? ` [${SUIT_ICONS[card.suit]}${card.val}]` : '';
+            addLog(`✨ ${cpu.name} は ${targetP.name} の手札からカード${cardInfo}を1枚引いた！`, 'summon');
+            addLog(`🔄 ${targetP.name} は山札からカードを1枚補充した。`);
+        } else if (choice === 'graveyard') {
+            let gyChoice = 0;
+            if (graveyard.length >= 2 && Math.random() < 0.5) gyChoice = 1;
+            performDraw(cpu, 'graveyard', null, null, gyChoice);
+        } else {
+            performDraw(cpu, 'deck');
+            addLog(`📥 ${cpu.name} は山札からカードを1枚引いた。`, 'summon');
+        }
+    }
+}
+
+function handleDrawFromDeck() {
+    if (!isGameStarted) return;
+    const p = players[turnIndex];
+    const card = performDraw(p, 'deck');
+    const cardInfo = (networkRole === 'solo' && card) ? ` [${SUIT_ICONS[card.suit]}${card.val}]` : '';
+    addLog(`📥 ${p.name} は山札からカード${cardInfo}を1枚引いた。`, 'summon');
+    currentPhase = 'SUMMON';
+    renderBoard();
+}
+
+function handleSelectStealMode() {
+    if (!isGameStarted) return;
+    if (isFirstRound[turnIndex]) {
+        alert("⚠️ 1ターン目は相手の手札からカードを引くことはできません。（山札から引いてください）");
+        return;
+    }
+
+    const opponentsWithCards = players.filter(pl => pl.id !== turnIndex && pl.alive && pl.hand.length > 0);
+    if (opponentsWithCards.length === 0) {
+        alert("引ける手札を持っている相手がいません。山札または墓地から引いてください。");
+        return;
+    }
+    currentPhase = 'SELECT_TARGET_HAND';
+    renderBoard();
+}
+
+function handleDrawFromGraveyard() {
+    if (!isGameStarted) return;
+    if (graveyard.length === 0) {
+        alert("墓地にカードがありません。");
+        return;
+    }
+    const p = players[turnIndex];
+    if (graveyard.length === 1) {
+        performDraw(p, 'graveyard', null, null, 0);
+        currentPhase = 'SUMMON';
+        renderBoard();
+    } else {
+        currentPhase = 'SELECT_GRAVEYARD_CARD';
+        renderBoard();
+    }
+}
+
+function handlePickGraveyardCard(choice) {
+    if (!isGameStarted) return;
+    const p = players[turnIndex];
+    performDraw(p, 'graveyard', null, null, choice);
+    currentPhase = 'SUMMON';
+    renderBoard();
+}
+
+function handleCancelGraveyardChoice() {
+    currentPhase = 'DRAW_CHOICE';
+    renderBoard();
+}
+
+function handleCancelStealMode() {
+    currentPhase = 'DRAW_CHOICE';
+    renderBoard();
+}
+
+function handleStealCard(targetPId, cardIdx) {
+    if (!isGameStarted) return;
+    const p = players[turnIndex];
+    const targetP = players[targetPId];
+    if (!targetP || !targetP.hand[cardIdx]) return;
+
+    const card = performDraw(p, 'steal', targetPId, cardIdx);
+    const cardInfo = (networkRole === 'solo' && card) ? ` [${SUIT_ICONS[card.suit]}${card.val}]` : '';
+    addLog(`✨ ${p.name} は ${targetP.name} の手札からカード${cardInfo}を1枚引いた！`, 'summon');
+    addLog(`🔄 ${targetP.name} は山札からカードを1枚補充した。`);
+
+    currentPhase = 'SUMMON';
+    renderBoard();
+}
+
+function handleClubChooseEffect(choice) {
+    const p = players[turnIndex];
+    if (choice === 'destroy') {
+        const totalUnits = players.reduce((sum, pl) => sum + pl.field.length, 0);
+        if (totalUnits > 0) {
+            currentPhase = 'CLUB_SELECT_DESTROY_TARGET';
+            addLog(`♣効果：効果破壊するフィールド上のユニットを選択してください。`, 'important');
+        } else {
+            alert("フィールド上に破壊できるユニットが存在しません。1ドローを選択します。");
+            currentPhase = 'CLUB_DRAW_CHOICE';
+        }
+    } else if (choice === 'draw') {
+        currentPhase = 'CLUB_DRAW_CHOICE';
+    }
+    renderBoard();
+}
+
+function handleClubDrawFromDeck() {
+    const p = players[turnIndex];
+    const card = performDraw(p, 'deck');
+    const cardInfo = (networkRole === 'solo' && card) ? ` [${SUIT_ICONS[card.suit]}${card.val}]` : '';
+    addLog(`♣️効果発動！ ${p.name} は山札からカード${cardInfo}を1枚引いた。`, 'attack');
+    afterClubDraw();
+}
+
+function handleClubSelectStealMode() {
+    const opponentsWithCards = players.filter(pl => pl.id !== turnIndex && pl.alive && pl.hand.length > 0);
+    if (opponentsWithCards.length === 0) {
+        alert("引ける手札を持っている相手がいません。山札または墓地から引いてください。");
+        return;
+    }
+    currentPhase = 'CLUB_SELECT_TARGET_HAND';
+    renderBoard();
+}
+
+function handleClubDrawFromGraveyard() {
+    if (graveyard.length === 0) {
+        alert("墓地にカードがありません。");
+        return;
+    }
+    const p = players[turnIndex];
+    if (graveyard.length === 1) {
+        performDraw(p, 'graveyard', null, null, 0);
+        afterClubDraw();
+    } else {
+        currentPhase = 'CLUB_SELECT_GRAVEYARD_CARD';
+        renderBoard();
+    }
+}
+
+function handleClubPickGraveyardCard(choice) {
+    const p = players[turnIndex];
+    performDraw(p, 'graveyard', null, null, choice);
+    afterClubDraw();
+}
+
+function handleCancelClubGraveyardChoice() {
+    currentPhase = 'CLUB_DRAW_CHOICE';
+    renderBoard();
+}
+
+function handleCancelClubStealMode() {
+    currentPhase = 'CLUB_DRAW_CHOICE';
+    renderBoard();
+}
+
+function handleClubStealCard(targetPId, cardIdx) {
+    const p = players[turnIndex];
+    const targetP = players[targetPId];
+    if (!targetP || !targetP.hand[cardIdx]) return;
+
+    const card = performDraw(p, 'steal', targetPId, cardIdx);
+    const cardInfo = (networkRole === 'solo' && card) ? ` [${SUIT_ICONS[card.suit]}${card.val}]` : '';
+    addLog(`♣効果発動！ ${p.name} は ${targetP.name} の手札からカード${cardInfo}を1枚引いた！`, 'attack');
+    addLog(`🔄 ${targetP.name} は山札からカードを1枚補充した。`);
+    afterClubDraw();
+}
+
+function afterClubDraw() {
+    renderBoard();
+    finishTurn();
+}
+
+function handleSelectClubDestroyTarget(targetPId, uIdx) {
+    const targetP = players[targetPId];
+    if (!targetP || !targetP.field[uIdx]) return;
+    const targetUnit = targetP.field[uIdx];
+    const uName = defenderUnitName(targetUnit);
+
+    sendUnitToGraveyard(targetUnit);
+    targetP.field.splice(uIdx, 1);
+    addLog(`💥 ♣️効果発動！ ${targetP.name} の ${uName} を効果破壊した！（被ダメージ0点）`, 'attack');
+
+    renderBoard();
+    finishTurn();
+}
+
+async function finishTurn() {
+    selectedAttackerIndex = null;
+    if (isGameOver) return;
+    const p = players[turnIndex];
+
+    if (p.alive) {
+        let adventWeakenedCount = 0;
+        p.field.forEach((u) => {
+            if (u.isAdvent && u.justSummoned) {
+                u.atk = 0;
+                u.isDefZero = true;
+                u.justSummoned = false;
+                adventWeakenedCount++;
+                const uName = defenderUnitName(u);
+                addLog(`🦅 ${p.name} の ${uName} は召喚ターンの終わりに攻撃力0・防御力0になった！`, 'important');
+            }
+        });
+
+        if (adventWeakenedCount > 0) {
+            renderBoard();
+            await cpuSleep(400);
+        }
+
+        const hasActiveGluttony = p.field.some(u => u.isGluttony && !u.justSummoned);
+
+        if (hasActiveGluttony && p.field.length > 0) {
+            if (p.isCPU) {
+                let minIdx = 0;
+                let minVal = 999;
+                p.field.forEach((u, idx) => {
+                    let val = u.atk;
+                    if (u.type === 'pig') val = 0.1; 
+                    if (val < minVal) {
+                        minVal = val;
+                        minIdx = idx;
+                    }
+                });
+                const sacUnit = p.field.splice(minIdx, 1)[0];
+                sendUnitToGraveyard(sacUnit);
+                const uName = defenderUnitName(sacUnit);
+                addLog(`🍖 ${p.name} はグラトニービーストの効果により、自分の場の ${uName} を墓地に送った。（被ダメージなし）`, 'important');
+                
+                p.field.forEach(u => { if (u.isGluttony) u.justSummoned = false; });
+
+                renderBoard();
+                await cpuSleep(600);
+                nextTurn();
+                return;
+            } else {
+                if (p.field.length === 1) {
+                    const sacUnit = p.field.pop();
+                    sendUnitToGraveyard(sacUnit);
+                    const uName = defenderUnitName(sacUnit);
+                    addLog(`🍖 グラトニービーストの効果により、場に1体しかいない ${uName} を墓地に送りました。（被ダメージなし）`, 'important');
+                    
+                    p.field.forEach(u => { if (u.isGluttony) u.justSummoned = false; });
+
+                    renderBoard();
+                    nextTurn();
+                    return;
+                } else {
+                    currentPhase = 'GLUTTONY_SACRIFICE';
+                    addLog(`🍖 グラトニービーストの効果発動！ ターン終了時に墓地へ送る自分のユニット（黄枠）をクリックして選択してください。`, 'important');
+                    renderBoard();
+                    return;
+                }
+            }
+        }
+
+        p.field.forEach(u => { if (u.isGluttony) u.justSummoned = false; });
+    }
+
+    nextTurn();
+}
+
+function handleGluttonySacrifice(uIdx) {
+    const p = players[turnIndex];
+    if (!p.field[uIdx]) return;
+    const sacUnit = p.field.splice(uIdx, 1)[0];
+    sendUnitToGraveyard(sacUnit);
+    const uName = defenderUnitName(sacUnit);
+    addLog(`🍖 ${p.name} はグラトニービーストの効果により、${uName} を墓地に送りました。（被ダメージなし）`, 'important');
+    
+    p.field.forEach(u => { if (u.isGluttony) u.justSummoned = false; });
+
+    selectedHandIndices = [];
+    selectedAttackerIndex = null;
+    renderBoard();
+    nextTurn();
+}
+
+function nextTurn() {
+    if (isGameOver) return;
+    const alivePlayers = players.filter(p => p.alive);
+    if (alivePlayers.length <= 1) {
+        isGameOver = true;
+        const winner = alivePlayers[0] ? alivePlayers[0].name : "全員脱落";
+        addLog(`🎉 ゲーム終了！ 勝者: ${winner}！`, 'important');
+        renderBoard();
+        return;
+    }
+
+    turnIndex = (turnIndex + 1) % 4;
+    startTurn();
+}
+
+function toggleSelectHand(idx) {
+    if (!isGameStarted || currentPhase !== 'SUMMON' || players[turnIndex].isCPU || isGameOver) return;
+    const pos = selectedHandIndices.indexOf(idx);
+    if (pos > -1) {
+        selectedHandIndices.splice(pos, 1);
+    } else {
+        if (selectedHandIndices.length < 2) selectedHandIndices.push(idx);
+    }
+    renderBoard();
+}
+
+function consumeCards(p, indices) {
+    const sorted = [...indices].sort((a,b) => b - a);
+    const result = [];
+    sorted.forEach(i => {
+        result.push(p.hand.splice(i, 1)[0]);
+    });
+    return result.reverse();
+}
+
+function handleSummonBeast() {
+    if (!isGameStarted) return;
+    if (selectedHandIndices.length !== 2) {
+        alert("ビースト召喚にはカードを2枚選択してください。");
+        return;
+    }
+    const p = players[turnIndex];
+    const c1 = p.hand[selectedHandIndices[0]];
+    const c2 = p.hand[selectedHandIndices[1]];
+
+    if (c1.val !== c2.val || !isSameColor(c1.suit, c2.suit)) {
+        alert("同じ数字かつ同色のペア（♠/♣️ または ❤️/♦）を選んでください。");
+        return;
+    }
+
+    summonBeast(p, selectedHandIndices, c1.suit, c1.val);
+    selectedHandIndices = [];
+    enterAttackPhase();
+}
+
+function summonBeast(p, indices, mainSuit, val) {
+    const cards = consumeCards(p, indices);
+    let atk = val;
+    if (mainSuit === 'spade') atk += 1;
+
+    const cardsText = cards.map(c => `${SUIT_ICONS[c.suit]}${c.val}`).join(' ');
+
+    p.field.push({
+        type: 'beast',
+        isJoker: false,
+        isGluttony: false,
+        isAdvent: false,
+        suit: mainSuit,
+        val: val,
+        atk: atk,
+        isTapped: false,
+        isDefZero: false,
+        cannotAttack: false,
+        cards: cards
+    });
+    addLog(`✨ ${p.name} は ${SUIT_ICONS[mainSuit]}${val} のビースト(攻:${atk})を召喚！[使用カード: ${cardsText}]`, 'summon');
+}
+
+function handleSummonPig() {
+    if (!isGameStarted) return;
+    if (selectedHandIndices.length !== 2) {
+        alert("ブタ召喚には手札を 2 枚選択してください。");
+        return;
+    }
+
+    summonPig(players[turnIndex], selectedHandIndices);
+    selectedHandIndices = [];
+    enterAttackPhase();
+}
+
+function summonPig(p, indices) {
+    const cards = consumeCards(p, indices);
+    const cardsText = cards.map(c => `${SUIT_ICONS[c.suit]}${c.val}`).join(' ');
+    
+    p.field.push({
+        type: 'pig',
+        isJoker: false,
+        isGluttony: false,
+        isAdvent: false,
+        suit: null,
+        atk: 0.5,
+        isTapped: false,
+        isDefZero: false,
+        cannotAttack: false,
+        cards: cards
+    });
+    addLog(`🐷 ${p.name} はブタ(攻:0.5)を召喚！[公開カード: ${cardsText}]`, 'summon');
+}
+
+function handleSummonJoker() {
+    if (!isGameStarted) return;
+    const p = players[turnIndex];
+
+    if (!canSummonJoker(p)) {
+        alert("ジョーカービーストは1ゲームに1回、ダメージを受けており最下位の時（かつ山札1枚以上）のみ召喚可能です。");
+        return;
+    }
+
+    if (selectedHandIndices.length !== 1) {
+        alert("ジョーカービースト召喚には手札を1枚選択してください。");
+        return;
+    }
+    
+    summonJoker(p, selectedHandIndices[0]);
+    selectedHandIndices = [];
+    enterAttackPhase();
+}
+
+function summonJoker(p, handIndex) {
+    const costCard = p.hand.splice(handIndex, 1)[0];
+    const gachaCard = deck.pop();
+    if (!gachaCard) return;
+
+    const mainSuit = gachaCard.suit;
+    const val = gachaCard.val;
+    let atk = val;
+    if (mainSuit === 'spade') atk += 1;
+
+    const costText = `${SUIT_ICONS[costCard.suit]}${costCard.val}`;
+
+    p.field.push({
+        type: 'beast',
+        isJoker: true,
+        isGluttony: false,
+        isAdvent: false,
+        suit: mainSuit,
+        val: val,
+        atk: atk,
+        isTapped: false,
+        isDefZero: false,
+        cannotAttack: false,
+        cards: [gachaCard, costCard]
+    });
+
+    p.isJokerUsed = true;
+
+    addLog(`🃏 【ジョーカービースト】${p.name} はコスト[${costText}]を差し出し、山札ガチャから ${SUIT_ICONS[mainSuit]}${val} (攻:${atk}) を召喚！`, 'summon');
+}
+
+function handleSelectGluttonyTarget() {
+    if (!isGameStarted) return;
+    const p = players[turnIndex];
+
+    if (!canSummonGluttony(p)) {
+        alert("グラトニービーストの召喚条件を満たしていません。");
+        return;
+    }
+
+    if (selectedHandIndices.length !== 1) {
+        alert("グラトニービースト召喚には手札を1枚選択してください。");
+        return;
+    }
+
+    currentPhase = 'SELECT_GLUTTONY_STEAL_TARGET';
+    renderBoard();
+}
+
+function handleCancelGluttonySteal() {
+    selectedHandIndices = [];
+    currentPhase = 'SUMMON';
+    renderBoard();
+}
+
+function handleGluttonyStealCard(targetPId, cardIdx) {
+    if (!isGameStarted) return;
+    const p = players[turnIndex];
+    if (selectedHandIndices.length !== 1) return;
+
+    const costCard = p.hand.splice(selectedHandIndices[0], 1)[0];
+    const targetP = players[targetPId];
+    if (!targetP || !targetP.hand[cardIdx]) return;
+
+    const stolenCard = targetP.hand.splice(cardIdx, 1)[0];
+    drawCardFromDeckOnly(targetP);
+
+    const mainSuit = stolenCard.suit;
+    const val = stolenCard.val;
+    let atk = val;
+    if (mainSuit === 'spade') atk += 1;
+
+    p.field.push({
+        type: 'beast',
+        isJoker: false,
+        isGluttony: true,
+        isAdvent: false,
+        suit: mainSuit,
+        val: val,
+        atk: atk,
+        isTapped: false,
+        isDefZero: false,
+        cannotAttack: false,
+        justSummoned: true,
+        cards: [stolenCard, costCard]
+    });
+
+    p.isJokerUsed = true;
+    selectedHandIndices = [];
+
+    addLog(`🍖 【グラトニービースト】${p.name} はコスト[${SUIT_ICONS[costCard.suit]}${costCard.val}]を払い、${targetP.name} の手札からカードを抜き取ってペアにし ${SUIT_ICONS[mainSuit]}${val} (攻:${atk}/防:8) を召喚！`, 'summon');
+    addLog(`🔄 ${targetP.name} は山札からカードを1枚補充した。`);
+
+    enterAttackPhase();
+}
+
+function handleSelectAdventTarget() {
+    if (!isGameStarted) return;
+    const p = players[turnIndex];
+
+    if (!canSummonAdvent(p)) {
+        alert("アドベントビーストの召喚条件を満たしていません。");
+        return;
+    }
+
+    if (selectedHandIndices.length !== 1) {
+        alert("アドベントビースト召喚には手札を1枚選択してください。");
+        return;
+    }
+
+    if (graveyard.length === 1) {
+        handlePickAdventGraveyardCard(0);
+    } else {
+        currentPhase = 'SELECT_ADVENT_GRAVEYARD_CARD';
+        renderBoard();
+    }
+}
+
+function handleCancelAdventGraveyard() {
+    selectedHandIndices = [];
+    currentPhase = 'SUMMON';
+    renderBoard();
+}
+
+function handlePickAdventGraveyardCard(choice) {
+    if (!isGameStarted) return;
+    const p = players[turnIndex];
+    if (selectedHandIndices.length !== 1) return;
+
+    const costCard = p.hand.splice(selectedHandIndices[0], 1)[0];
+
+    let selectedCard = null;
+    if (graveyard.length >= 2 && choice === 1) {
+        selectedCard = graveyard.splice(graveyard.length - 2, 1)[0];
+    } else {
+        selectedCard = graveyard.pop();
+    }
+
+    deck.push(...graveyard);
+    graveyard = [];
+    shuffle(deck);
+
+    const mainSuit = selectedCard.suit;
+    const val = selectedCard.val;
+    let atk = val;
+    if (mainSuit === 'spade') atk += 1;
+
+    p.field.push({
+        type: 'beast',
+        isJoker: false,
+        isGluttony: false,
+        isAdvent: true,
+        suit: mainSuit,
+        val: val,
+        atk: atk,
+        isTapped: false,
+        isDefZero: false,
+        cannotAttack: false,
+        justSummoned: true,
+        cards: [selectedCard, costCard]
+    });
+
+    p.isJokerUsed = true;
+    selectedHandIndices = [];
+
+    addLog(`🦅 【アドベントビースト】${p.name} はコスト[${SUIT_ICONS[costCard.suit]}${costCard.val}]を払い、墓地から [${SUIT_ICONS[selectedCard.suit]}${selectedCard.val}] を選んでペアにし ${SUIT_ICONS[mainSuit]}${val} (攻:${atk}) を召喚！残りの墓地は山札に戻されシャッフルされた。`, 'summon');
+
+    enterAttackPhase();
+}
+
+function handleSkipSummon() {
+    if (!isGameStarted) return;
+    const p = players[turnIndex];
+    if (p.hand.length >= 8) {
+        alert("手札が8枚以上あるため、召喚をスキップできません。ビーストかブタを召喚してください。");
+        return;
+    }
+    selectedHandIndices = [];
+    addLog(`${p.name} は召喚をスキップした。`);
+    enterAttackPhase();
+}
+
+async function enterAttackPhase() {
+    currentPhase = 'ATTACK';
+    const p = players[turnIndex];
+
+    if (isFirstRound[turnIndex]) {
+        isFirstRound[turnIndex] = false;
+        addLog(`${p.name} の最初のターンのため、攻撃が制限されスキップされます。`);
+        await cpuSleep(600);
+        finishTurn();
+        return;
+    }
+
+    const canAttackUnits = p.field.filter(u => !u.cannotAttack);
+    if (canAttackUnits.length === 0) {
+        if (p.field.length > 0) {
+            addLog(`${p.name} の場のユニットはすべて攻撃不能状態のため、攻撃フェイズをスキップします。`);
+        } else {
+            addLog(`${p.name} の場に攻撃可能なユニットがいません。`);
+        }
+        await cpuSleep(600);
+        finishTurn();
+        return;
+    }
+
+    if (!p.isCPU) {
+        const firstCanAttackIdx = p.field.findIndex(u => !u.cannotAttack);
+        selectedAttackerIndex = firstCanAttackIdx >= 0 ? firstCanAttackIdx : null;
+    }
+
+    renderBoard();
+
+    if (p.isCPU) {
+        await cpuSleep(800);
+        await cpuPlayAttack(p);
+    }
+}
+
+function selectAttacker(uIdx) {
+    if (!isGameStarted || currentPhase !== 'ATTACK' || players[turnIndex].isCPU || isGameOver) return;
+    const u = players[turnIndex].field[uIdx];
+    if (u) {
+        if (u.cannotAttack) {
+            alert("⚠️ このユニットはデバフにより攻撃宣言できません！");
+            return;
+        }
+        selectedAttackerIndex = uIdx;
+        renderBoard();
+    }
+}
+
+function isAdvantageous(s1, s2) {
+    if (!s1 || !s2) return false;
+    if (s1 === 'spade' && s2 === 'heart') return true;
+    if (s1 === 'heart' && s2 === 'club') return true;
+    if (s1 === 'club' && s2 === 'diamond') return true;
+    if (s1 === 'diamond' && s2 === 'spade') return true;
+    return false;
+}
+
+function sendUnitToGraveyard(unit) {
+    if (!unit.cards || unit.cards.length < 2) return;
+    graveyard.push(unit.cards[1]);
+    graveyard.push(unit.cards[0]);
+}
+
+function checkPlayerDefeat(p) {
+    if (p.hp <= 0 && p.alive) {
+        p.alive = false;
+        addLog(`💀 ${p.name} はHPが0になり脱落した！`, 'important');
+        
+        const alivePlayers = players.filter(pl => pl.alive);
+        if (alivePlayers.length <= 1) {
+            return;
+        }
+
+        let recycled = [...p.hand, ...deck, ...graveyard];
+        graveyard = [];
+        
+        for (let u of p.field) {
+            if (u.cards) recycled.push(...u.cards);
+        }
+        
+        p.hand = [];
+        p.field = [];
+        
+        deck = recycled;
+        shuffle(deck);
+        
+        addLog(`🌀 脱落者 (${p.name}) の手札・場・墓地・山札をすべて合わせて再シャッフルしました！`, 'important');
+    }
+}
+
+async function executeAttack(attackerP, attackerUnit, defenderP, defenderUnit) {
+    if (isGameOver) return;
+
+    if (!attackerUnit) {
+        alert("攻撃に使用する自分のユニットを選択してください。");
+        return;
+    }
+
+    if (attackerUnit.cannotAttack) {
+        if (attackerP.id === 0) alert("⚠️ このユニットはデバフにより攻撃宣言できません！");
+        return;
+    }
+
+    if (defenderUnit) {
+        const hasBeastGuard = defenderP.field.some(u => u.type === 'beast');
+        if (defenderUnit.type === 'pig' && hasBeastGuard) {
+            if (attackerP.id === 0) {
+                alert("⚠️ 相手の場にビーストが存在するため、ブタを攻撃できません！");
+            }
+            return;
+        }
+    }
+
+    if (!defenderUnit) {
+        const uName = defenderUnitName(attackerUnit);
+        const dmg = 2;
+        
+        addLog(`⚔ ${attackerP.name} の ${uName} が ${defenderP.name} にダイレクトアタック！(${dmg}ダメージ)`, 'attack');
+        defenderP.hp -= dmg;
+        
+        checkPlayerDefeat(defenderP);
+
+        const alivePlayers = players.filter(pl => pl.alive);
+        if (alivePlayers.length <= 1) {
+            isGameOver = true;
+            const winner = alivePlayers[0] ? alivePlayers[0].name : "全員脱落";
+            addLog(`🎉 ゲーム終了！ 勝者: ${winner}！`, 'important');
+            renderBoard();
+            return;
+        }
+
+        if (attackerUnit.suit === 'club') {
+            if (attackerP.isCPU) {
+                const allUnits = [];
+                players.forEach(p => {
+                    p.field.forEach((u, uIdx) => {
+                        allUnits.push({ player: p, unit: u, uIdx: uIdx });
+                    });
+                });
+
+                const enemyUnits = allUnits.filter(item => item.player.id !== attackerP.id && item.player.alive);
+
+                if (enemyUnits.length > 0) {
+                    enemyUnits.sort((a, b) => b.unit.atk - a.unit.atk);
+                    const target = enemyUnits[0];
+                    const targetUName = defenderUnitName(target.unit);
+                    sendUnitToGraveyard(target.unit);
+                    target.player.field.splice(target.uIdx, 1);
+                    addLog(`💥 ♣️効果発動！ ${attackerP.name} は ${target.player.name} の ${targetUName} を効果破壊した！（被ダメージ0点）`, 'attack');
+                    currentPhase = 'WAIT';
+                    renderBoard();
+                    await cpuSleep(800);
+                    finishTurn();
+                    return;
+                } else {
+                    const livingOpponents = players.filter(pl => pl.id !== attackerP.id && pl.alive && pl.hand.length > 0);
+                    
+                    let gyPairChoice = -1;
+                    if (graveyard.length > 0) {
+                        if (checkPairWithHand(attackerP.hand, graveyard[graveyard.length - 1])) gyPairChoice = 0;
+                        else if (graveyard.length >= 2 && checkPairWithHand(attackerP.hand, graveyard[graveyard.length - 2])) gyPairChoice = 1;
+                    }
+
+                    if (gyPairChoice !== -1) {
+                        performDraw(attackerP, 'graveyard', null, null, gyPairChoice);
+                        addLog(`♣効果発動！ ${attackerP.name} は墓地から手札とペアになるカードを引き当てた！`, 'attack');
+                    } else if (livingOpponents.length > 0) {
+                        livingOpponents.sort((a, b) => b.hand.length - a.hand.length || b.hp - a.hp);
+                        const targetP = livingOpponents[0];
+                        const cardIdx = Math.floor(Math.random() * targetP.hand.length);
+                        const card = performDraw(attackerP, 'steal', targetP.id, cardIdx);
+                        const cardInfo = (networkRole === 'solo' && targetP.id === 0 && card) ? ` [${SUIT_ICONS[card.suit]}${card.val}]` : '';
+                        addLog(`♣️効果発動！ ${attackerP.name} は ${targetP.name} の手札からカード${cardInfo}を1枚引いた！`, 'attack');
+                        addLog(`🔄 ${targetP.name} は山札からカードを1枚補充した。`);
+                    } else if (graveyard.length > 0) {
+                        performDraw(attackerP, 'graveyard', null, null, 0);
+                    } else {
+                        performDraw(attackerP, 'deck');
+                        addLog(`♣効果発動！ ${attackerP.name} は山札から1枚引いた。`, 'attack');
+                    }
+                    currentPhase = 'WAIT';
+                    renderBoard();
+                    await cpuSleep(800);
+                    finishTurn();
+                    return;
+                }
+            } else {
+                currentPhase = 'CLUB_CHOICE';
+                addLog(`♣️効果発動！ 発動する効果を選択してください。`, 'important');
+                renderBoard();
+                return;
+            }
+        }
+
+        currentPhase = 'WAIT';
+        renderBoard();
+        await cpuSleep(800);
+        finishTurn();
+        return;
+    }
+
+    let atkPower = attackerUnit.atk;
+    let defPower = defenderUnit.isGluttony ? 8 : (defenderUnit.isDefZero ? 0 : defenderUnit.atk);
+    if (defenderUnit.isGluttony && defenderUnit.suit === 'spade') defPower += 1;
+
+    if (isAdvantageous(attackerUnit.suit, defenderUnit.suit)) {
+        atkPower += 4;
+    } else if (isAdvantageous(defenderUnit.suit, attackerUnit.suit)) {
+        defPower += 4;
+    }
+
+    if (atkPower < defPower) {
+        if (attackerP.id === 0) {
+            alert(`⚠ 属性相性等により攻撃力が足りないため攻撃できません！\n（あなたの攻撃力: ${atkPower} / 相手の防御力: ${defPower}）`);
+        } else {
+            addLog(`⚠ ${attackerP.name} は攻撃力が足りないため攻撃を実行できませんでした。`);
+        }
+        return;
+    }
+
+    const atkName = defenderUnitName(attackerUnit);
+    const defName = defenderUnitName(defenderUnit);
+
+    addLog(`⚔ ${attackerP.name}(${atkName} 攻:${atkPower}) VS ${defenderP.name}(${defName} 防:${defPower})`, 'attack');
+
+    if (defenderUnit.suit === 'heart' && !defenderUnit.isTapped) {
+        defenderUnit.isTapped = true;
+        addLog(`🛡️ ${defenderP.name} の ${defName} は攻撃を耐えた！(タップ状態)`);
+    } else {
+        const isPigDefeated = (defenderUnit.type === 'pig');
+        const unitLabel = defenderUnit.isAdvent ? 'アドベント' : (defenderUnit.isGluttony ? 'グラトニー' : (defenderUnit.isJoker ? 'ジョーカー' : (isPigDefeated ? 'ブタ' : 'ビースト')));
+        addLog(`${defenderP.name} の ${defName} (${unitLabel}) を撃破！カードは墓地に送られます。`, 'attack');
+        
+        sendUnitToGraveyard(defenderUnit);
+        defenderP.field = defenderP.field.filter(u => u !== defenderUnit);
+
+        if (defenderP.alive) {
+            if (defenderUnit.isJoker || defenderUnit.isGluttony || defenderUnit.isAdvent) {
+                addLog(`🛡️ 特殊効果！ 倒されても ${defenderP.name} への撃破ダメージは0点！`, 'summon');
+            } else {
+                defenderP.hp -= 1;
+                addLog(`${defenderP.name} はHP1減少。`, 'attack');
+            }
+
+            if (attackerUnit.suit === 'diamond' && defenderP.alive) {
+                addLog(`♦️効果発動！ ${defenderP.name} に追加1ダメージ！`, 'attack');
+                defenderP.hp -= 1;
+            }
+
+            checkPlayerDefeat(defenderP);
+        }
+    }
+
+    const alivePlayers = players.filter(pl => pl.alive);
+    if (alivePlayers.length <= 1) {
+        isGameOver = true;
+        const winner = alivePlayers[0] ? alivePlayers[0].name : "全員脱落";
+        addLog(`🎉 ゲーム終了！ 勝者: ${winner}！`, 'important');
+        renderBoard();
+        return;
+    }
+
+    currentPhase = 'WAIT';
+    renderBoard();
+    await cpuSleep(800);
+    finishTurn();
+}
+
+function defenderUnitName(u) {
+    if (!u) return '';
+    if (u.isAdvent) return `🦅${SUIT_ICONS[u.suit]}${u.val}`;
+    if (u.isGluttony) return `🍖${SUIT_ICONS[u.suit]}${u.val}`;
+    if (u.isJoker) return `🃏${SUIT_ICONS[u.suit]}${u.val}`;
+    if (u.type === 'beast') return `${SUIT_ICONS[u.suit]}${u.val}`;
+    return 'ブタ🐷';
+}
+
+function handleAttackDirect(targetPId) {
+    if (!isGameStarted) return;
+    const p = players[turnIndex];
+    if (selectedAttackerIndex === null || !p.field[selectedAttackerIndex]) {
+        alert("攻撃に使用する自分のユニットを選択してください。");
+        return;
+    }
+    const myUnit = p.field[selectedAttackerIndex];
+    const targetP = players[targetPId];
+    if (myUnit && targetP) executeAttack(p, myUnit, targetP, null);
+}
+
+function handleSkipAttack() {
+    if (!isGameStarted) return;
+    addLog(`${players[turnIndex].name} は攻撃をスキップした。`);
+    finishTurn();
+}
+
+function getCpuPigCostIndices(cpu) {
+    if (cpu.hand.length < 2) return [0, 1];
+    
+    let cardScores = cpu.hand.map((c, idx) => {
+        const hasPair = cpu.hand.some((other, oIdx) => oIdx !== idx && other.val === c.val && isSameColor(other.suit, c.suit));
+        let score = c.val;
+        if (hasPair) score += 50;
+        if (c.suit === 'spade' || c.suit === 'heart') score += 2;
+        return { idx, score };
+    });
+
+    cardScores.sort((a, b) => a.score - b.score);
+    return [cardScores[0].idx, cardScores[1].idx];
+}
+
+async function cpuPlaySummon(cpu) {
+    let pairs = [];
+    for (let i = 0; i < cpu.hand.length; i++) {
+        for (let j = i + 1; j < cpu.hand.length; j++) {
+            const c1 = cpu.hand[i];
+            const c2 = cpu.hand[j];
+            if (c1.val === c2.val && isSameColor(c1.suit, c2.suit)) {
+                let score = c1.val;
+                if (c1.suit === 'spade' || c2.suit === 'spade') score += 1.5;
+                if (c1.suit === 'heart' || c2.suit === 'heart') score += 1.0;
+                pairs.push({ i, j, score, val: c1.val, suit: c1.suit });
+            }
+        }
+    }
+
+    let summoned = false;
+
+    const inputVal = parseFloat(document.getElementById('initial-hp-input').value);
+    const startHp = isNaN(inputVal) || inputVal < 1 ? 10 : inputVal;
+    const aliveCount = players.filter(pl => pl.alive).length;
+    const opponentsWithCards = players.filter(pl => pl.id !== cpu.id && pl.alive && pl.hand.length > 0);
+    const hasGraveyard = graveyard.length > 0;
+
+    if (jokerRuleSetting !== 'none' && !cpu.isJokerUsed && isLowestHp(cpu) && cpu.hand.length >= 1) {
+        const isPinch = (cpu.hp <= 6 || cpu.hp <= startHp * 0.6);
+        const shouldSummonSpecial = isPinch && (pairs.length === 0 || cpu.hp <= 4);
+
+        if (shouldSummonSpecial) {
+            let specialCandidates = [];
+
+            if (canSummonJoker(cpu)) {
+                specialCandidates.push({ type: 'joker', score: 40 });
+            }
+
+            if (canSummonGluttony(cpu)) {
+                const allAlivePlayers = players.filter(pl => pl.alive);
+                const isFourAlive = (allAlivePlayers.length === 4);
+                const isAllHpThreeOrLess = allAlivePlayers.every(pl => pl.hp <= 3);
+
+                if (!isFourAlive || isAllHpThreeOrLess) {
+                    specialCandidates.push({ type: 'gluttony', score: 50 });
+                }
+            }
+
+            if (canSummonAdvent(cpu)) {
+                let adventScore = -50; 
+                let canDefeatAnyBeast = false;
+                let maxDefeatedBeastAtk = -1;
+                let bestGyChoice = 0;
+
+                const gyCandidates = [];
+                if (graveyard.length >= 1) gyCandidates.push({ card: graveyard[graveyard.length - 1], choice: 0 });
+                if (graveyard.length >= 2) gyCandidates.push({ card: graveyard[graveyard.length - 2], choice: 1 });
+
+                const aliveOpponents = players.filter(pl => pl.id !== cpu.id && pl.alive);
+
+                for (let gyCandidate of gyCandidates) {
+                    const c = gyCandidate.card;
+                    const mainSuit = c.suit;
+                    const val = c.val;
+                    let advAtk = val + (mainSuit === 'spade' ? 1 : 0);
+
+                    for (let enemy of aliveOpponents) {
+                        const hasBeastGuard = enemy.field.some(u => u.type === 'beast');
+                        for (let enemyUnit of enemy.field) {
+                            if (enemyUnit.type === 'pig' && hasBeastGuard) continue;
+
+                            let atkP = advAtk;
+                            let defP = enemyUnit.isGluttony ? 8 : (enemyUnit.isDefZero ? 0 : enemyUnit.atk);
+                            if (enemyUnit.isGluttony && enemyUnit.suit === 'spade') defP += 1;
+
+                            if (isAdvantageous(mainSuit, enemyUnit.suit)) atkP += 4;
+                            else if (isAdvantageous(enemyUnit.suit, mainSuit)) defP += 4;
+
+                            if (atkP >= defP) {
+                                if (enemyUnit.type === 'beast') {
+                                    canDefeatAnyBeast = true;
+                                    if (enemyUnit.atk > maxDefeatedBeastAtk) {
+                                        maxDefeatedBeastAtk = enemyUnit.atk;
+                                        bestGyChoice = gyCandidate.choice;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                if (canDefeatAnyBeast) {
+                    adventScore = 30 + (maxDefeatedBeastAtk * 15);
+                } else {
+                    adventScore = -50;
+                }
+
+                specialCandidates.push({ type: 'advent', score: adventScore, gyChoice: bestGyChoice });
+            }
+
+            specialCandidates.sort((a, b) => b.score - a.score);
+            const bestSpecial = specialCandidates[0];
+
+            if (bestSpecial && bestSpecial.score > 0) {
+                const chosenSpecial = bestSpecial.type;
+                let costIdx = getCpuLowestCostIndex(cpu);
+
+                if (chosenSpecial === 'gluttony') {
+                    opponentsWithCards.sort((a, b) => b.hand.length - a.hand.length);
+                    const targetP = opponentsWithCards[0];
+                    const stolenCardIdx = Math.floor(Math.random() * targetP.hand.length);
+                    cpuSummonGluttony(cpu, costIdx, targetP, stolenCardIdx);
+                    summoned = true;
+                } else if (chosenSpecial === 'advent') {
+                    const gyChoice = bestSpecial.gyChoice !== undefined ? bestSpecial.gyChoice : 0;
+                    cpuSummonAdvent(cpu, costIdx, gyChoice);
+                    summoned = true;
+                } else if (chosenSpecial === 'joker') {
+                    summonJoker(cpu, costIdx);
+                    summoned = true;
+                }
+            }
+        }
+    }
+
+    if (!summoned) {
+        if (cpuDifficulty === 'counter') {
+            const aliveOpponents = players.filter(pl => pl.id !== cpu.id && pl.alive);
+            const enemyMaxAtk = Math.max(0, ...aliveOpponents.flatMap(p => p.field.map(u => u.atk)));
+
+            const isPinch = (cpu.hp <= 4) || (cpu.field.length === 0 && enemyMaxAtk >= 3) || (isLowestHp(cpu) && cpu.hp <= 5);
+            const isHandFull = (cpu.hand.length >= 7);
+
+            if (pairs.length > 0) {
+                pairs.sort((a, b) => b.score - a.score);
+                const bestPair = pairs[0];
+
+                if (isPinch || isHandFull || bestPair.val >= 4 || cpu.field.length === 0) {
+                    summonBeast(cpu, [bestPair.i, bestPair.j], bestPair.suit, bestPair.val);
+                    summoned = true;
+                } else {
+                    addLog(`🛡️ ${cpu.name} は戦力を温存し、手札を蓄える選択をした。`);
+                }
+            }
+
+            if (!summoned) {
+                if (isPinch && cpu.field.length === 0 && cpu.hand.length >= 2) {
+                    const pigIndices = getCpuPigCostIndices(cpu);
+                    summonPig(cpu, pigIndices);
+                    summoned = true;
+                } else if (cpu.hand.length >= 8) {
+                    const pigIndices = getCpuPigCostIndices(cpu);
+                    summonPig(cpu, pigIndices);
+                    summoned = true;
+                }
+            }
+        } else if (cpuDifficulty === 'hard') {
+            const aliveOpponents = players.filter(pl => pl.id !== cpu.id && pl.alive);
+            const enemyMaxAtk = Math.max(0, ...aliveOpponents.flatMap(p => p.field.map(u => u.atk)));
+
+            if (pairs.length > 0) {
+                pairs.sort((a, b) => b.score - a.score);
+                const bestPair = pairs[0];
+                summonBeast(cpu, [bestPair.i, bestPair.j], bestPair.suit, bestPair.val);
+                summoned = true;
+            } else {
+                if ((cpu.field.length === 0 && enemyMaxAtk >= 3) || cpu.hand.length >= 8) {
+                    const pigIndices = getCpuPigCostIndices(cpu);
+                    summonPig(cpu, pigIndices);
+                    summoned = true;
+                }
+            }
+        } else {
+            if (pairs.length > 0) {
+                pairs.sort((a, b) => b.score - a.score);
+                const bestPair = pairs[0];
+                summonBeast(cpu, [bestPair.i, bestPair.j], bestPair.suit, bestPair.val);
+                summoned = true;
+            } else if (cpu.hand.length >= 8) {
+                const pigIndices = getCpuPigCostIndices(cpu);
+                summonPig(cpu, pigIndices);
+                summoned = true;
+            }
+        }
+    }
+
+    if (!summoned && cpuDifficulty !== 'counter') {
+        addLog(`${cpu.name} は召喚をスキップした。`);
+    } else if (!summoned && currentPhase === 'SUMMON') {
+        addLog(`⏳ ${cpu.name} は戦力を温存し、召喚をスキップした。`);
+    }
+
+    renderBoard();
+    await enterAttackPhase();
+}
+
+function cpuSummonGluttony(cpu, costIdx, targetP, stolenCardIdx) {
+    const costCard = cpu.hand.splice(costIdx, 1)[0];
+    const stolenCard = targetP.hand.splice(stolenCardIdx, 1)[0];
+    drawCardFromDeckOnly(targetP);
+
+    const mainSuit = stolenCard.suit;
+    const val = stolenCard.val;
+    let atk = val;
+    if (mainSuit === 'spade') atk += 1;
+
+    cpu.field.push({
+        type: 'beast',
+        isJoker: false,
+        isGluttony: true,
+        isAdvent: false,
+        suit: mainSuit,
+        val: val,
+        atk: atk,
+        isTapped: false,
+        isDefZero: false,
+        cannotAttack: false,
+        justSummoned: true,
+        cards: [stolenCard, costCard]
+    });
+
+    cpu.isJokerUsed = true;
+    addLog(`🍖 【グラトニービースト】${cpu.name} はコスト[${SUIT_ICONS[costCard.suit]}${costCard.val}]を払い、${targetP.name} の手札からカードを抜き取ってペアにし ${SUIT_ICONS[mainSuit]}${val} (攻:${atk}/防:8) を召喚！`, 'summon');
+    addLog(`🔄 ${targetP.name} は山札からカードを1枚補充した。`);
+}
+
+function cpuSummonAdvent(cpu, costIdx, gyChoice) {
+    const costCard = cpu.hand.splice(costIdx, 1)[0];
+    
+    let selectedCard = null;
+    if (graveyard.length >= 2 && gyChoice === 1) {
+        selectedCard = graveyard.splice(graveyard.length - 2, 1)[0];
+    } else {
+        selectedCard = graveyard.pop();
+    }
+
+    deck.push(...graveyard);
+    graveyard = [];
+    shuffle(deck);
+
+    const mainSuit = selectedCard.suit;
+    const val = selectedCard.val;
+    let atk = val;
+    if (mainSuit === 'spade') atk += 1;
+
+    cpu.field.push({
+        type: 'beast',
+        isJoker: false,
+        isGluttony: false,
+        isAdvent: true,
+        suit: mainSuit,
+        val: val,
+        atk: atk,
+        isTapped: false,
+        isDefZero: false,
+        cannotAttack: false,
+        justSummoned: true,
+        cards: [selectedCard, costCard]
+    });
+
+    cpu.isJokerUsed = true;
+    addLog(`🦅 【アドベントビースト】${cpu.name} はコスト[${SUIT_ICONS[costCard.suit]}${costCard.val}]を払い、墓地からカードを選んでペアにし ${SUIT_ICONS[mainSuit]}${val} (攻:${atk}) を召喚！残りの墓地は山札にシャッフルされた。`, 'summon');
+}
+
+function getCpuLowestCostIndex(cpu) {
+    let bestCostIdx = 0;
+    let minScore = 999;
+    cpu.hand.forEach((c, idx) => {
+        const hasPair = cpu.hand.some((other, oIdx) => oIdx !== idx && other.val === c.val && isSameColor(other.suit, c.suit));
+        let score = c.val + (hasPair ? 50 : 0);
+        if (c.suit === 'spade' || c.suit === 'heart') score += 2;
+        if (score < minScore) {
+            minScore = score;
+            bestCostIdx = idx;
+        }
+    });
+    return bestCostIdx;
+}
+
+async function cpuPlayAttack(cpu) {
+    if (cpu.field.length === 0) {
+        finishTurn();
+        return;
+    }
+
+    let possibleAttacks = [];
+
+    const aliveOpponents = players.filter(pl => pl.id !== cpu.id && pl.alive);
+    if (aliveOpponents.length === 0) {
+        finishTurn();
+        return;
+    }
+
+    const getPlayerThreatScore = (p) => {
+        const fieldAtk = p.field.reduce((sum, u) => sum + u.atk, 0);
+        const unitCount = p.field.length;
+        return fieldAtk * 25 + unitCount * 10 + p.hp * 5 + p.hand.length * 2;
+    };
+
+    let topEnemy = aliveOpponents[0];
+    let maxThreatScore = -1;
+    for (let enemy of aliveOpponents) {
+        const threatScore = getPlayerThreatScore(enemy);
+        if (threatScore > maxThreatScore) {
+            maxThreatScore = threatScore;
+            topEnemy = enemy;
+        }
+    }
+
+    for (let myUnit of cpu.field) {
+        if (myUnit.cannotAttack) continue;
+
+        for (let enemy of aliveOpponents) {
+            const isTopEnemy = (enemy.id === topEnemy.id);
+
+            if (enemy.field.length === 0) {
+                let priority = 10;
+
+                if (myUnit.suit === 'club') {
+                    priority = 50000;
+                    if (isTopEnemy) {
+                        priority += 3000;
+                        if (enemy.hp <= 2) priority += 3000;
+                    } else {
+                        if (enemy.hp <= 2) priority += 200;
+                    }
+                } else {
+                    priority = 100;
+                    if (isTopEnemy) {
+                        priority += 4000;
+                        if (enemy.hp <= 2) priority += 5000;
+                    } else {
+                        if (enemy.hp <= 2) priority += 300;
+                    }
+                }
+
+                possibleAttacks.push({ myUnit, enemy, unit: null, priority });
+            } else {
+                const hasBeastGuard = enemy.field.some(u => u.type === 'beast');
+                for (let u of enemy.field) {
+                    if (u.type === 'pig' && hasBeastGuard) continue;
+
+                    let atkP = myUnit.atk;
+                    let defP = u.isGluttony ? 8 : (u.isDefZero ? 0 : u.atk);
+                    if (u.isGluttony && u.suit === 'spade') defP += 1;
+
+                    if (isAdvantageous(myUnit.suit, u.suit)) atkP += 4;
+                    else if (isAdvantageous(u.suit, myUnit.suit)) defP += 4;
+
+                    if (atkP >= defP) {
+                        let priority = 10 + (u.atk * 3);
+                        const surplusAtk = atkP - defP;
+                        priority += Math.min(surplusAtk, 3);
+
+                        if (isTopEnemy) priority += 3000;
+
+                        const willDamagePlayer = (u.suit !== 'heart' || u.isTapped);
+                        let expectedDmg = 1;
+                        if (myUnit.suit === 'diamond') expectedDmg += 1;
+
+                        if (willDamagePlayer && enemy.hp <= expectedDmg && !u.isJoker && !u.isGluttony && !u.isAdvent) {
+                            if (isTopEnemy) {
+                                priority += 5000;
+                            } else {
+                                priority += 200;
+                            }
+                        }
+
+                        if (u.suit === 'heart' && !u.isTapped) priority -= 3;
+                        if (myUnit.suit === 'diamond') priority += 5;
+                        if (u.isJoker || u.isGluttony || u.isAdvent) priority -= 4;
+
+                        possibleAttacks.push({ myUnit, enemy, unit: u, priority });
+                    }
+                }
+            }
+        }
+    }
+
+    possibleAttacks.sort((a, b) => b.priority - a.priority);
+
+    if (possibleAttacks.length > 0 && possibleAttacks[0].priority > 0) {
+        const best = possibleAttacks[0];
+        await executeAttack(cpu, best.myUnit, best.enemy, best.unit);
+    } else {
+        addLog(`🛡 ${cpu.name} は戦略的判断により攻撃をスキップした。`);
+        await cpuSleep(600);
+        finishTurn();
+    }
+}
+
+function createCardHtml(card, isFaceDown = false, index = -1, isSelected = false, customClick = "") {
+    if (!card) return '';
+    if (isFaceDown) {
+        const clickAttr = customClick ? `onclick="${customClick}"` : '';
+        const targetableClass = customClick ? ' targetable' : '';
+        return `<div class="card back${targetableClass}" ${clickAttr}></div>`;
+    }
+    
+    const colorClass = (card.suit === 'heart' || card.suit === 'diamond') ? 'red' : 'black';
+    const clickAttr = index >= 0 ? `onclick="toggleSelectHand(${index})"` : "";
+    const selectedClass = isSelected ? ' selected' : '';
+    return `<div class="card ${colorClass}${selectedClass}" ${clickAttr}><div>${SUIT_ICONS[card.suit]}</div><div>${card.val}</div></div>`;
+}
+
+function createUnitHtml(unit, pId, uIdx) {
+    if (!unit) return '';
+    const isMyTurn = turnIndex === localPlayerId;
+    const isOwner = pId === localPlayerId;
+    const isEnemy = pId !== localPlayerId;
+
+    let clickAttr = '';
+    let targetClass = '';
+    let selectedAttackerClass = '';
+    let statusBadgeClass = '';
+
+    const enemyPlayer = players[pId];
+    const hasBeastGuard = enemyPlayer.field.some(u => u.type === 'beast');
+    const isPigProtected = (unit.type === 'pig' && hasBeastGuard);
+
+    let isTooStrong = false;
+    let myAtkCalc = 0;
+    let enemyDefCalc = 0;
+    if (isMyTurn && currentPhase === 'ATTACK' && isEnemy && selectedAttackerIndex !== null && players[turnIndex].field[selectedAttackerIndex]) {
+        const myUnit = players[turnIndex].field[selectedAttackerIndex];
+        let atkPower = myUnit.atk;
+        let defPower = unit.isGluttony ? 8 : (unit.isDefZero ? 0 : unit.atk);
+        if (unit.isGluttony && unit.suit === 'spade') defPower += 1;
+
+        if (isAdvantageous(myUnit.suit, unit.suit)) atkPower += 4;
+        else if (isAdvantageous(unit.suit, myUnit.suit)) defPower += 4;
+
+        myAtkCalc = atkPower;
+        enemyDefCalc = defPower;
+
+        if (atkPower < defPower) {
+            isTooStrong = true;
+        }
+    }
+
+    if (isMyTurn && currentPhase === 'ATTACK') {
+        if (isOwner) {
+            clickAttr = `onclick="selectAttacker(${uIdx})"`;
+            if (uIdx === selectedAttackerIndex) selectedAttackerClass = ' attacking-selected';
+        } else if (isEnemy) {
+            if (selectedAttackerIndex === null) {
+                clickAttr = `onclick="alert('まず攻撃に使用する自分のユニットを選択してください！')"`;
+            } else if (isPigProtected) {
+                statusBadgeClass += ' protected';
+                clickAttr = `onclick="alert('⚠ 相手の場にビーストが存在するため、ブタを攻撃できません！')"`;
+            } else if (isTooStrong) {
+                statusBadgeClass += ' too-strong';
+                clickAttr = `onclick="alert('⚠️ 属性相性等により高防御のため攻撃できません！\\n（あなたの攻撃力: ${myAtkCalc} / 相手の防御力: ${enemyDefCalc}）')"`;
+            } else {
+                targetClass = ' targetable';
+                clickAttr = `onclick="networkAttack(${pId}, ${uIdx})"`;
+            }
+        }
+    } else if (isMyTurn && currentPhase === 'CLUB_SELECT_DESTROY_TARGET') {
+        targetClass = ' targetable';
+        clickAttr = `onclick="handleSelectClubDestroyTarget(${pId}, ${uIdx})"`;
+    } else if (isMyTurn && currentPhase === 'GLUTTONY_SACRIFICE' && isOwner) {
+        targetClass = ' targetable';
+        clickAttr = `onclick="handleGluttonySacrifice(${uIdx})"`;
+    }
+
+    const tappedClass = unit.isTapped ? ' tapped' : '';
+    const cardsText = unit.cards ? unit.cards.map(c => `${SUIT_ICONS[c.suit]}${c.val}`).join(' ') : '';
+    const specialClass = unit.isAdvent ? ' advent-unit' : (unit.isGluttony ? ' gluttony-unit' : (unit.isJoker ? ' joker-unit' : ''));
+
+    const defZeroBadge = unit.isDefZero ? ' <span style="color:#ff5252; font-size:9px;">(防0)</span>' : '';
+    const cannotAtkBadge = unit.cannotAttack ? ' <span style="color:#ff5252; font-size:9px;">🚫</span>' : '';
+
+    if (unit.type === 'pig') {
+        return `<div class="unit pig${tappedClass}${targetClass}${selectedAttackerClass}${statusBadgeClass}" ${clickAttr}>
+            <div>🐷 ブタ${cannotAtkBadge}</div>
+            <div class="revealed-cards">${cardsText}</div>
+            <div>攻: ${unit.atk}</div>
+        </div>`;
+    } else {
+        let prefix = unit.isAdvent ? '🦅' : (unit.isGluttony ? '🍖' : (unit.isJoker ? '🃏' : ''));
+        let defText = unit.isGluttony ? ' 防:8' : '';
+        const labelText = `${prefix}${SUIT_ICONS[unit.suit]} ${unit.val}`;
+        return `<div class="unit ${unit.suit}${specialClass}${tappedClass}${targetClass}${selectedAttackerClass}${statusBadgeClass}" ${clickAttr}>
+            <div>${labelText}${defZeroBadge}</div>
+            <div class="revealed-cards">${cardsText}</div>
+            <div>攻: ${unit.atk}${defText}</div>
+        </div>`;
+    }
+}
+
+function renderBoard() {
+    document.getElementById('deck-count').innerText = deck.length;
+    document.getElementById('graveyard-count').innerText = graveyard.length;
+    
+    const gyTopSpan = document.getElementById('graveyard-top');
+
+    if (graveyard.length > 0) {
+        let gyHtml = '<div class="graveyard-preview">';
+        const topCard = graveyard[graveyard.length - 1];
+        
+        gyHtml += `<div class="graveyard-card-wrapper">${createCardHtml(topCard, false)}<span class="graveyard-label">1番上</span></div>`;
+        
+        if (graveyard.length >= 2) {
+            const nextCard = graveyard[graveyard.length - 2];
+            gyHtml += `<div class="graveyard-card-wrapper" style="opacity: 0.85; margin-left: 2px;">${createCardHtml(nextCard, false)}<span class="graveyard-label">その次</span></div>`;
+        }
+        gyHtml += '</div>';
+        gyTopSpan.innerHTML = gyHtml;
+    } else {
+        gyTopSpan.innerHTML = '<span style="font-size:11px; color:#888; margin-left: 5px;">(なし)</span>';
+    }
+
+    const turnName = players[turnIndex] ? players[turnIndex].name : '';
+    let phaseText = '';
+    if (currentPhase === 'DRAW_CHOICE') phaseText = 'ドロー選択';
+    else if (currentPhase === 'SELECT_TARGET_HAND') phaseText = '相手の手札を選択';
+    else if (currentPhase === 'SELECT_GRAVEYARD_CARD') phaseText = '墓地から選択';
+    else if (currentPhase === 'CLUB_CHOICE') phaseText = 'クラブ効果：効果選択';
+    else if (currentPhase === 'CLUB_DRAW_CHOICE') phaseText = 'クラブ効果：ドロー選択';
+    else if (currentPhase === 'CLUB_SELECT_TARGET_HAND') phaseText = 'クラブ効果：相手の手札を選択';
+    else if (currentPhase === 'CLUB_SELECT_GRAVEYARD_CARD') phaseText = 'クラブ効果：墓地から選択';
+    else if (currentPhase === 'CLUB_SELECT_DESTROY_TARGET') phaseText = 'クラブ効果：破壊対象を選択';
+    else if (currentPhase === 'SUMMON') phaseText = '召喚';
+    else if (currentPhase === 'SELECT_GLUTTONY_STEAL_TARGET') phaseText = 'グラトニー効果：抜き取る相手の手札を選択';
+    else if (currentPhase === 'SELECT_ADVENT_GRAVEYARD_CARD') phaseText = 'アドベント効果：ペアにする墓地カードを選択';
+    else if (currentPhase === 'ATTACK') phaseText = '攻撃';
+    else if (currentPhase === 'GLUTTONY_SACRIFICE') phaseText = 'グラトニー効果：墓地送り選択';
+
+    document.getElementById('turn-info').innerText = `【${turnName} のターン】 フェイズ: ${phaseText}`;
+
+    const npcsContainer = document.getElementById('npcs-container');
+    const playerContainer = document.getElementById('player-container');
+    npcsContainer.innerHTML = '';
+    playerContainer.innerHTML = '';
+
+    players.forEach((p) => {
+        const isPlayer = p.id === localPlayerId;
+        const isCurrentTurn = p.id === turnIndex;
+        const area = document.createElement('div');
+        area.className = isPlayer ? 'player-area' : 'npc-area';
+        if (isCurrentTurn) area.classList.add('my-turn');
+
+        let drawPhaseMsg = '';
+        if (isPlayer && isCurrentTurn && (currentPhase === 'DRAW_CHOICE' || currentPhase === 'SELECT_TARGET_HAND' || currentPhase === 'SELECT_GRAVEYARD_CARD')) {
+            drawPhaseMsg = ' <span style="font-size: 11px; color: #ffeb3b; font-weight: normal; margin-left: 8px;">⚠️ ドローフェイズのため手札を選択できません</span>';
+        }
+
+        let handHtml = '';
+        p.hand.forEach((card, idx) => {
+            const isSelected = isPlayer && selectedHandIndices.includes(idx);
+            let customClick = '';
+            if (isGameStarted && !isPlayer && p.alive && p.hand.length > 0) {
+                if (currentPhase === 'SELECT_TARGET_HAND') {
+                    customClick = `handleStealCard(${p.id}, ${idx})`;
+                } else if (currentPhase === 'CLUB_SELECT_TARGET_HAND') {
+                    customClick = `handleClubStealCard(${p.id}, ${idx})`;
+                } else if (currentPhase === 'SELECT_GLUTTONY_STEAL_TARGET') {
+                    customClick = `handleGluttonyStealCard(${p.id}, ${idx})`;
+                }
+            }
+            handHtml += createCardHtml(card, !isPlayer, isPlayer ? idx : -1, isSelected, customClick);
+        });
+
+        let fieldHtml = '';
+        p.field.forEach((unit, uIdx) => {
+            fieldHtml += createUnitHtml(unit, p.id, uIdx);
+        });
+
+        const jokerBadgeHtml = jokerRuleSetting !== 'none' ? `
+            <span class="joker-badge ${p.isJokerUsed ? 'used' : 'unused'}">
+                🃏/🍖/🦅 ${p.isJokerUsed ? '使用済' : '未使用'}
+            </span>
+        ` : '';
+
+        area.innerHTML = `
+            <div class="area-header">
+                <h3 class="area-title">${p.name} ${isCurrentTurn ? '★' : ''}</h3>
+                <div>
+                    ${jokerBadgeHtml}
+                    <span class="hp-badge">HP: ${p.hp} ${!p.alive ? '(脱落)' : ''}</span>
+                </div>
+            </div>
+            <div>
+                <span class="zone-title">手札 (${p.hand.length}枚)${drawPhaseMsg}</span>
+                <div class="hand-zone">
+                    ${handHtml || '<span style="font-size:11px; color:#888;">(なし)</span>'}
+                </div>
+            </div>
+            <div class="board-section">
+                <div class="zone">
+                    <span class="zone-title">フィールド (${p.field.length}体)</span>
+                    ${fieldHtml || '<span style="font-size:11px; color:#888;">(なし)</span>'}
+                </div>
+            </div>
+        `;
+
+        if (isPlayer) {
+            const actions = document.createElement('div');
+            actions.className = 'controls';
+            let actionHtml = '';
+
+            if (isGameStarted && isCurrentTurn && !isGameOver) {
+                if (currentPhase === 'DRAW_CHOICE') {
+                    actionHtml += `<button class="btn-action" onclick="handleDrawFromDeck()">📥 山札から引く</button>`;
+                    
+                    const isFirstTurn = isFirstRound[turnIndex];
+                    const stealDisabled = isFirstTurn ? 'disabled' : '';
+                    const stealLabel = isFirstTurn ? '🃏 相手から引く (1T禁止)' : '🃏 相手の手札から引く';
+                    actionHtml += `<button class="btn-pig" ${stealDisabled} onclick="handleSelectStealMode()">${stealLabel}</button>`;
+                    
+                    const gyDisabled = graveyard.length === 0 ? 'disabled' : '';
+                    const hasGyPair = canMakePairFromGraveyard(p.hand, graveyard);
+                    const gyClass = hasGyPair ? 'btn-attack btn-highlight' : 'btn-attack';
+                    const gyText = hasGyPair ? '✨ 🪦 墓地から引く (ペア作成可能！)' : '🪦 墓地から引く (上2枚から選択)';
+                    actionHtml += `<button class="${gyClass}" ${gyDisabled} onclick="handleDrawFromGraveyard()">${gyText}</button>`;
+                } else if (currentPhase === 'SELECT_TARGET_HAND') {
+                    actionHtml += `<span style="font-size:11px; color:#ffeb3b; align-self:center;">💡 上の相手の手札（裏向きカード）を1枚選んでクリックしてください</span>`;
+                    actionHtml += `<button onclick="handleCancelStealMode()">もとに戻る</button>`;
+                } else if (currentPhase === 'SELECT_GRAVEYARD_CARD' || currentPhase === 'CLUB_SELECT_GRAVEYARD_CARD') {
+                    const isClub = currentPhase === 'CLUB_SELECT_GRAVEYARD_CARD';
+                    const topCard = graveyard[graveyard.length - 1];
+                    const nextCard = graveyard.length >= 2 ? graveyard[graveyard.length - 2] : null;
+
+                    const isTopPair = topCard && checkPairWithHand(p.hand, topCard);
+                    const isNextPair = nextCard && checkPairWithHand(p.hand, nextCard);
+
+                    const topBtnClass = isTopPair ? 'btn-attack btn-highlight' : 'btn-action';
+                    const nextBtnClass = isNextPair ? 'btn-attack btn-highlight' : 'btn-action';
+
+                    const topText = topCard ? `1番上 [${SUIT_ICONS[topCard.suit]}${topCard.val}]` : '1番上';
+                    const nextText = nextCard ? `その次 [${SUIT_ICONS[nextCard.suit]}${nextCard.val}]` : 'その次';
+
+                    if (isClub) {
+                        actionHtml += `<button class="${topBtnClass}" onclick="handleClubPickGraveyardCard(0)">🪦 ${topText} を引く</button>`;
+                        if (nextCard) {
+                            actionHtml += `<button class="${nextBtnClass}" onclick="handleClubPickGraveyardCard(1)">🪦 ${nextText} を引く</button>`;
+                        }
+                        actionHtml += `<button onclick="handleCancelClubGraveyardChoice()">もとに戻る</button>`;
+                    } else {
+                        actionHtml += `<button class="${topBtnClass}" onclick="handlePickGraveyardCard(0)">🪦 ${topText} を引く</button>`;
+                        if (nextCard) {
+                            actionHtml += `<button class="${nextBtnClass}" onclick="handlePickGraveyardCard(1)">🪦 ${nextText} を引く</button>`;
+                        }
+                        actionHtml += `<button onclick="handleCancelGraveyardChoice()">もとに戻る</button>`;
+                    }
+                } else if (currentPhase === 'CLUB_CHOICE') {
+                    actionHtml += `<button class="btn-attack" onclick="handleClubChooseEffect('destroy')">💥 相手ユニットを1体効果破壊</button>`;
+                    actionHtml += `<button class="btn-action" onclick="handleClubChooseEffect('draw')">📥 カードを1枚引く</button>`;
+                } else if (currentPhase === 'CLUB_DRAW_CHOICE') {
+                    actionHtml += `<button class="btn-action" onclick="handleClubDrawFromDeck()">📥 山札から引く</button>`;
+                    actionHtml += `<button class="btn-pig" onclick="handleClubSelectStealMode()">🃏 相手の手札から引く</button>`;
+                    const gyDisabled = graveyard.length === 0 ? 'disabled' : '';
+                    actionHtml += `<button class="btn-attack" ${gyDisabled} onclick="handleClubDrawFromGraveyard()">🪦 墓地から引く</button>`;
+                } else if (currentPhase === 'CLUB_SELECT_TARGET_HAND') {
+                    actionHtml += `<span style="font-size:11px; color:#ffeb3b; align-self:center;">💡 上の相手の手札（裏向きカード）を1枚選んでクリックしてください</span>`;
+                    actionHtml += `<button onclick="handleCancelClubStealMode()">もとに戻る</button>`;
+                } else if (currentPhase === 'CLUB_SELECT_DESTROY_TARGET') {
+                    actionHtml += `<span style="font-size:11px; color:#ffeb3b; align-self:center;">💡 破壊するフィールド上のユニットをクリックしてください</span>`;
+                } else if (currentPhase === 'SUMMON') {
+                    actionHtml += `<button class="btn-action" onclick="handleSummonBeast()">✨ ビースト召喚</button>`;
+                    actionHtml += `<button class="btn-pig" onclick="handleSummonPig()">🐷 ブタ召喚</button>`;
+                    
+                    if (canSummonJoker(p)) {
+                        actionHtml += `<button class="btn-joker" onclick="handleSummonJoker()">🃏 ジョーカービースト</button>`;
+                    }
+                    if (canSummonGluttony(p)) {
+                        actionHtml += `<button class="btn-gluttony" onclick="handleSelectGluttonyTarget()">🍖 グラトニービースト</button>`;
+                    }
+                    if (canSummonAdvent(p)) {
+                        actionHtml += `<button class="btn-advent" onclick="handleSelectAdventTarget()">🦅 アドベントビースト</button>`;
+                    }
+                    
+                    actionHtml += `<button onclick="handleSkipSummon()">⏭ 召喚スキップ</button>`;
+                } else if (currentPhase === 'SELECT_GLUTTONY_STEAL_TARGET') {
+                    actionHtml += `<span style="font-size:11px; color:#ffeb3b; align-self:center;">💡 抜き取る相手の手札（裏向きカード）を1枚選んでクリックしてください</span>`;
+                    actionHtml += `<button onclick="handleCancelGluttonySteal()">もとに戻る</button>`;
+                } else if (currentPhase === 'SELECT_ADVENT_GRAVEYARD_CARD') {
+                    const topCard = graveyard[graveyard.length - 1];
+                    const nextCard = graveyard.length >= 2 ? graveyard[graveyard.length - 2] : null;
+                    const topText = topCard ? `1番上 [${SUIT_ICONS[topCard.suit]}${topCard.val}]` : '1番上';
+                    const nextText = nextCard ? `その次 [${SUIT_ICONS[nextCard.suit]}${nextCard.val}]` : 'その次';
+
+                    actionHtml += `<button class="btn-advent" onclick="handlePickAdventGraveyardCard(0)">🦅 墓地 ${topText} とペア</button>`;
+                    if (nextCard) {
+                        actionHtml += `<button class="btn-advent" onclick="handlePickAdventGraveyardCard(1)">🦅 墓地 ${nextText} とペア</button>`;
+                    }
+                    actionHtml += `<button onclick="handleCancelAdventGraveyard()">もとに戻る</button>`;
+                } else if (currentPhase === 'ATTACK') {
+                    const aliveOpponents = players.filter(opp => opp.id !== turnIndex && opp.alive);
+                    aliveOpponents.forEach(opp => {
+                        if (opp.field.length === 0) {
+                            actionHtml += `<button class="btn-attack" onclick="handleAttackDirect(${opp.id})">⚔️ ${opp.name} にダイレクトアタック</button>`;
+                        }
+                    });
+
+                    actionHtml += `<button onclick="handleSkipAttack()">⏭ 攻撃スキップ</button>`;
+                } else if (currentPhase === 'GLUTTONY_SACRIFICE') {
+                    actionHtml += `<span style="font-size:11px; color:#ffeb3b; align-self:center;">💡 墓地へ送る自分のユニットをクリックしてください</span>`;
+                }
+
+                actions.innerHTML = actionHtml;
+                area.appendChild(actions);
+            }
+        }
+
+        if (isPlayer) {
+            playerContainer.appendChild(area);
+        } else {
+            npcsContainer.appendChild(area);
+        }
+    });
+    if (networkRole === 'host' && !remoteStateApplying) broadcastNetworkState();
+}
+
+
+// ---- Online room adapter: the host browser runs the original rules engine. ----
+const NETWORK_ACTIONS = [
+  'toggleSelectHand','handleDrawFromDeck','handleSelectStealMode','handleDrawFromGraveyard',
+  'handlePickGraveyardCard','handleCancelGraveyardChoice','handleCancelStealMode','handleStealCard',
+  'handleClubChooseEffect','handleClubDrawFromDeck','handleClubSelectStealMode','handleClubDrawFromGraveyard',
+  'handleClubPickGraveyardCard','handleCancelClubGraveyardChoice','handleCancelClubStealMode','handleClubStealCard',
+  'handleSelectClubDestroyTarget','handleGluttonySacrifice','handleSummonBeast','handleSummonPig',
+  'handleSummonJoker','handleSelectGluttonyTarget','handleCancelGluttonySteal','handleGluttonyStealCard',
+  'handleSelectAdventTarget','handleCancelAdventGraveyard','handlePickAdventGraveyardCard','handleSkipSummon',
+  'selectAttacker','networkAttack','handleAttackDirect','handleSkipAttack'
+];
+
+function setOnlineStatus(message) {
+    const node = document.getElementById('online-status');
+    if (node) node.textContent = message;
+}
+function currentPlayerName() {
+    const input = document.getElementById('player-name-input');
+    return ((input && input.value.trim()) || 'プレイヤー').slice(0, 16);
+}
+function renderOnlineSeats(humans = []) {
+    const node = document.getElementById('online-seats');
+    if (!node) return;
+    if (!onlineRoom) { node.innerHTML = ''; return; }
+    const byId = new Map(humans.map(h => [h.id, h]));
+    node.innerHTML = [0,1,2,3].map(id => {
+        const h = byId.get(id);
+        const label = h ? `席${id+1}: ${h.name}${id===0 ? '（ホスト）' : ''}` : `席${id+1}: 空席（開始時CPU）`;
+        return `<span class="online-seat">${escapeOnlineText(label)}</span>`;
+    }).join('');
+}
+function escapeOnlineText(s) {
+    return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+function createOnlineRoom() {
+    if (!socket || !socket.connected) { setOnlineStatus('サーバーに接続できません。起動中のURLを確認してください。'); return; }
+    if (isGameStarted) { setOnlineStatus('ゲーム中は新しい部屋を作れません。'); return; }
+    socket.emit('create-room', { name: currentPlayerName() });
+}
+function joinOnlineRoom() {
+    if (!socket || !socket.connected) { setOnlineStatus('サーバーに接続できません。サーバーが起動しているか確認してください。'); return; }
+    if (isGameStarted) { setOnlineStatus('ゲーム中は部屋に参加できません。'); return; }
+    const roomId = (document.getElementById('room-id-input').value || '').trim().toUpperCase();
+    if (!roomId) { setOnlineStatus('部屋番号を入力してください。'); return; }
+    socket.emit('join-room', { roomId, name: currentPlayerName() });
+}
+function startOnlineMatch() {
+    if (networkRole !== 'host' || !onlineRoom) { setOnlineStatus('先に「部屋を作る」を押してください。'); return; }
+    socket.emit('start-room', { roomId: onlineRoom.id });
+}
+function leaveOnlineRoom() {
+    if (socket && onlineRoom) socket.emit('leave-room', { roomId: onlineRoom.id });
+    networkRole = 'solo'; localPlayerId = 0; onlineRoom = null;
+    document.getElementById('online-start-btn').disabled = true;
+    document.getElementById('online-start-btn').style.display = '';
+    document.getElementById('online-leave-btn').style.display = 'none';
+    document.getElementById('setup-panel').style.display = '';
+    renderOnlineSeats([]);
+    setOnlineStatus('部屋を退出しました。CPUとの1人プレイ、または新しい部屋を選べます。');
+}
+function startSoloGame() {
+    if (networkRole !== 'solo' && socket && onlineRoom) socket.emit('leave-room', { roomId: onlineRoom.id });
+    networkRole = 'solo'; localPlayerId = 0; onlineRoom = null;
+    document.getElementById('setup-panel').style.display = '';
+    document.getElementById('online-start-btn').disabled = true;
+    document.getElementById('online-start-btn').style.display = '';
+    document.getElementById('online-leave-btn').style.display = 'none';
+    setOnlineStatus('CPUとの1人プレイ');
+    startGame();
+}
+function networkAttack(targetPlayerId, targetUnitIndex) {
+    const actor = players[turnIndex];
+    if (!actor || selectedAttackerIndex === null || !actor.field[selectedAttackerIndex]) return;
+    const defender = players[targetPlayerId];
+    if (!defender || !defender.field[targetUnitIndex]) return;
+    executeAttack(actor, actor.field[selectedAttackerIndex], defender, defender.field[targetUnitIndex]);
+}
+function makeNetworkSnapshot() {
+    const box = document.getElementById('log-box');
+    return {
+      players, deckCount: deck.length, graveyard, turnIndex, currentPhase,
+      selectedHandIndices, selectedAttackerIndex, isGameOver, isGameStarted,
+      isFirstRound, cpuDifficulty, jokerRuleSetting, gameStartHp,
+      logs: box ? Array.from(box.children).map(el => ({ text: el.innerText, className: el.className })) : []
+    };
+}
+function broadcastNetworkState() {
+    if (!socket || !onlineRoom || !socket.connected) return;
+    socket.emit('host-state', { roomId: onlineRoom.id, state: makeNetworkSnapshot() });
+}
+function applyNetworkSnapshot(state) {
+    if (networkRole !== 'client' || !state) return;
+    remoteStateApplying = true;
+    try {
+      players = state.players || [];
+      deck = Array.from({length: Math.max(0, state.deckCount || 0)}, () => ({suit:'spade', val:1, id:'hidden-deck'}));
+      graveyard = state.graveyard || [];
+      turnIndex = state.turnIndex || 0;
+      currentPhase = state.currentPhase || 'DRAW_CHOICE';
+      selectedHandIndices = state.selectedHandIndices || [];
+      selectedAttackerIndex = state.selectedAttackerIndex ?? null;
+      isGameOver = !!state.isGameOver;
+      isGameStarted = !!state.isGameStarted;
+      isFirstRound = state.isFirstRound || [true,true,true,true];
+      cpuDifficulty = state.cpuDifficulty || 'counter';
+      jokerRuleSetting = state.jokerRuleSetting || 'all';
+      gameStartHp = state.gameStartHp || 10;
+      document.getElementById('initial-hp-input').value = gameStartHp;
+      document.getElementById('cpu-difficulty-select').value = cpuDifficulty;
+      document.getElementById('joker-rule-select').value = jokerRuleSetting;
+      document.getElementById('game-info').style.display = isGameStarted ? 'block' : 'none';
+      const box = document.getElementById('log-box');
+      if (box && Array.isArray(state.logs)) {
+        box.innerHTML = '';
+        state.logs.forEach(entry => {
+          const div = document.createElement('div'); div.className = entry.className || 'log-msg'; div.innerText = entry.text || ''; box.appendChild(div);
+        });
+        box.scrollTop = box.scrollHeight;
+      }
+      if (isGameStarted) {
+        document.getElementById('setup-panel').style.display = 'none';
+        document.getElementById('online-start-btn').style.display = 'none';
+      }
+      renderBoard();
+    } finally { remoteStateApplying = false; }
+}
+
+if (typeof io === 'function') {
+  socket = io();
+  originalBrowserAlert = window.alert.bind(window);
+  window.alert = function(message) {
+    if (networkRole === 'host' && remoteActionSeat !== null && onlineRoom) {
+      socket.emit('action-feedback', { roomId: onlineRoom.id, seat: remoteActionSeat, message: String(message) });
+      return;
+    }
+    originalBrowserAlert(message);
+  };
+  socket.on('connect', () => setOnlineStatus('サーバーに接続しました。部屋を作成するか、番号で参加してください。'));
+  socket.on('connect_error', () => setOnlineStatus('サーバーに接続できません。node server.js が起動しているか確認してください。'));
+  socket.on('room-created', data => {
+    networkRole = 'host'; localPlayerId = 0;
+    onlineRoom = { id: data.roomId, humans: data.players || [{id:0,name:currentPlayerName()}], started:false };
+    document.getElementById('room-id-input').value = data.roomId;
+    document.getElementById('online-start-btn').disabled = false;
+    document.getElementById('online-leave-btn').style.display = '';
+    setOnlineStatus(`部屋番号 ${data.roomId} を作成しました。この番号を共有してください。参加者が揃ったら対戦開始できます。`);
+    renderOnlineSeats(onlineRoom.humans);
+  });
+  socket.on('room-joined', data => {
+    networkRole = 'client'; localPlayerId = data.seat;
+    onlineRoom = { id:data.roomId, humans:data.players || [], started:false };
+    document.getElementById('room-id-input').value = data.roomId;
+    document.getElementById('online-start-btn').disabled = true;
+    document.getElementById('online-leave-btn').style.display = '';
+    document.getElementById('setup-panel').style.display = 'none';
+    setOnlineStatus(`部屋 ${data.roomId} に参加しました。ホストが対戦を開始するまでお待ちください。あなたの席は ${data.seat+1} 番です。`);
+    renderOnlineSeats(onlineRoom.humans);
+  });
+  socket.on('room-info', data => {
+    if (!onlineRoom || data.roomId !== onlineRoom.id) return;
+    onlineRoom.humans = data.players || [];
+    renderOnlineSeats(onlineRoom.humans);
+    if (networkRole === 'host') {
+      document.getElementById('online-start-btn').disabled = false;
+      setOnlineStatus(`部屋番号 ${onlineRoom.id}。参加者に番号を共有し、開始ボタンで対戦開始できます（空席はCPU）。`);
+    }
+  });
+  socket.on('room-started', data => {
+    if (!onlineRoom || data.roomId !== onlineRoom.id) return;
+    onlineRoom.humans = data.players || onlineRoom.humans;
+    onlineRoom.started = true;
+    renderOnlineSeats(onlineRoom.humans);
+    document.getElementById('online-start-btn').style.display = 'none';
+    document.getElementById('setup-panel').style.display = 'none';
+    setOnlineStatus(`対戦中：部屋 ${onlineRoom.id}。自分のターンに手札と操作ボタンが表示されます。`);
+    if (networkRole === 'host') startGame();
+  });
+  socket.on('room-state', data => { if (networkRole === 'client' && onlineRoom && data.roomId === onlineRoom.id) applyNetworkSnapshot(data.state); });
+  socket.on('room-action', data => {
+    if (networkRole !== 'host' || !data || !NETWORK_ACTIONS.includes(data.name)) return;
+    if (!isGameStarted || !players[turnIndex] || players[turnIndex].isCPU || turnIndex !== data.seat) return;
+    const fn = window[data.name];
+    if (typeof fn === 'function') {
+      remoteActionSeat = data.seat;
+      try { fn(...(Array.isArray(data.args) ? data.args : [])); }
+      finally { remoteActionSeat = null; }
+    }
+  });
+  socket.on('player-left', data => {
+    if (networkRole !== 'host' || !players[data.seat] || isGameOver) return;
+    players[data.seat].isCPU = true;
+    players[data.seat].name = `CPU ${data.seat}（退出後）`;
+    if (onlineRoom) onlineRoom.humans = (onlineRoom.humans || []).filter(h => h.id !== data.seat);
+    renderOnlineSeats(onlineRoom ? onlineRoom.humans : []);
+    addLog(`${players[data.seat].name} としてCPUが引き継ぎます。`, 'important');
+    renderBoard();
+    if (turnIndex === data.seat) startTurn();
+  });
+  socket.on('action-feedback', data => { if (networkRole === 'client' && onlineRoom && data && data.roomId === onlineRoom.id && data.seat === localPlayerId) originalBrowserAlert ? originalBrowserAlert(data.message) : window.alert(data.message); });
+  socket.on('room-error', data => setOnlineStatus((data && data.message) || '部屋の操作に失敗しました。'));
+  socket.on('room-closed', data => {
+    if (onlineRoom && data.roomId === onlineRoom.id) {
+      networkRole = 'solo'; localPlayerId = 0; onlineRoom = null;
+      document.getElementById('online-start-btn').disabled = true;
+      document.getElementById('online-start-btn').style.display = '';
+      document.getElementById('online-leave-btn').style.display = 'none';
+      document.getElementById('setup-panel').style.display = '';
+      document.getElementById('online-start-btn').style.display = '';
+      renderOnlineSeats([]);
+      setOnlineStatus('ホストが部屋を閉じました。CPUとの1人プレイ、または新しい部屋を選べます。');
+    }
+  });
+  socket.on('disconnect', () => setOnlineStatus('サーバーとの接続が切れました。ネットワークを確認してください。'));
+
+  NETWORK_ACTIONS.forEach(name => {
+    const original = window[name];
+    if (typeof original !== 'function') return;
+    window[name] = function(...args) {
+      if (networkRole === 'client') {
+        if (socket && onlineRoom) socket.emit('room-action', { roomId: onlineRoom.id, name, args });
+        return;
+      }
+      return original.apply(this, args);
+    };
+  });
+}
+
+</script>
+</body>
+</html>

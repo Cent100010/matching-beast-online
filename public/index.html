@@ -1,8 +1,9 @@
 <!DOCTYPE html>
+
 <html lang="ja">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
 <title>マッチングビースト</title>
 <style>
     * { box-sizing: border-box; }
@@ -427,137 +428,219 @@
         }
         .hand-zone .card.selected { transform: translateY(-3px); }
     }
+
+    /* Revised rulebook layout */
+    #rulebook-modal .modal-content { max-width: 760px; width: 92%; }
+    #rulebook-modal .rulebook-body { font-size: 14px; line-height: 1.7; color: #f3f3f3; }
+    #rulebook-modal .rulebook-section { margin: 15px 0 0; padding-top: 12px; border-top: 1px solid #48535f; }
+    #rulebook-modal .rulebook-section h3 { color: #ffeb3b; font-size: 17px; margin: 0 0 9px; }
+    #rulebook-modal .rulebook-section h4 { color: #61d5e5; font-size: 14px; margin: 0 0 6px; }
+    #rulebook-modal .rulebook-list { padding-left: 22px; margin: 6px 0 8px; }
+    #rulebook-modal .rulebook-list li { margin: 5px 0; }
+    #rulebook-modal .rulebook-sublist { padding-left: 20px; margin: 4px 0; }
+    #rulebook-modal .rulebook-sublist li { margin: 3px 0; }
+    #rulebook-modal .rulebook-card { background: rgba(255,255,255,.045); border: 1px solid #46515d; border-radius: 8px; padding: 10px 12px; margin: 8px 0; }
+    #rulebook-modal .rulebook-intro { background: rgba(255,235,59,.075); border-left: 4px solid #ffeb3b; border-radius: 5px; padding: 10px 12px; margin: 8px 0; }
+    #rulebook-modal .rulebook-note { background: rgba(255,152,0,.09); border-left: 4px solid #ff9800; border-radius: 5px; padding: 9px 12px; margin: 9px 0; }
+    #rulebook-modal .rulebook-section p { margin: 8px 0; }
+    @media (max-width: 650px) {
+      #rulebook-modal .modal-content { width: 96%; padding: 13px; max-height: 88vh; }
+      #rulebook-modal .rulebook-body { font-size: 13px; line-height: 1.65; }
+      #rulebook-modal .rulebook-section h3 { font-size: 16px; }
+      #rulebook-modal .rulebook-card { padding: 9px; }
+    }
 </style>
 </head>
 <body>
-
 <div id="game-container">
-    <div id="game-header">
-        <h1>マッチングビースト</h1>
-        <button id="rulebook-toggle" class="btn-rulebook" type="button" onclick="openRulebookModal()" aria-label="ルールブックを開く">📖 ルールブック</button>
-    </div>
-    
-    <section id="online-panel" aria-label="オンライン対戦">
-        <h2>🌐 オンライン対戦</h2>
-        <div class="online-row online-entry-row">
-            <label>プレイヤー名 <input id="player-name-input" maxlength="16" value="プレイヤー" autocomplete="nickname"></label>
-            <button class="btn-action" onclick="createOnlineRoom()">部屋を作る</button>
-        </div>
-        <div class="online-row online-entry-row">
-            <label>部屋番号 <input id="room-id-input" maxlength="6" placeholder="例: A1B2C" autocapitalize="characters"></label>
-            <button class="btn-pig" onclick="joinOnlineRoom()">部屋に参加</button>
-        </div>
-        <div id="online-status" role="status">部屋を作ると、番号を共有して友達を招待できます。1人でCPU戦もできます。</div>
-        <div id="online-seats"></div>
-        <div class="online-row">
-            <button id="online-start-btn" class="btn-attack" onclick="startOnlineMatch()" disabled>対戦開始（空席はCPU）</button>
-            <button id="online-leave-btn" onclick="leaveOnlineRoom()" style="display:none;">部屋を退出</button>
-        </div>
-    </section>
-
-    <div id="setup-panel">
-        <label>初期HP: 
-            <input type="number" id="initial-hp-input" value="10" min="1" style="width: 50px; padding: 4px; font-size: 14px; text-align: center;"> 点
+<div id="game-header">
+<h1>マッチングビースト</h1>
+<button aria-label="ルールブックを開く" class="btn-rulebook" id="rulebook-toggle" onclick="openRulebookModal()" type="button">📖 ルールブック</button>
+</div>
+<section aria-label="オンライン対戦" id="online-panel">
+<h2>🌐 オンライン対戦</h2>
+<div class="online-row online-entry-row">
+<label>プレイヤー名 <input autocomplete="nickname" id="player-name-input" maxlength="16" value="プレイヤー"/></label>
+<button class="btn-action" onclick="createOnlineRoom()">部屋を作る</button>
+</div>
+<div class="online-row online-entry-row">
+<label>部屋番号 <input autocapitalize="characters" id="room-id-input" maxlength="6" placeholder="例: A1B2C"/></label>
+<button class="btn-pig" onclick="joinOnlineRoom()">部屋に参加</button>
+</div>
+<div id="online-status" role="status">部屋を作ると、番号を共有して友達を招待できます。1人でCPU戦もできます。</div>
+<div id="online-seats"></div>
+<div class="online-row">
+<button class="btn-attack" disabled="" id="online-start-btn" onclick="startOnlineMatch()">対戦開始（空席はCPU）</button>
+<button id="online-leave-btn" onclick="leaveOnlineRoom()" style="display:none;">部屋を退出</button>
+</div>
+</section>
+<div id="setup-panel">
+<label>初期HP: 
+            <input id="initial-hp-input" min="1" style="width: 50px; padding: 4px; font-size: 14px; text-align: center;" type="number" value="10"/> 点
         </label>
-        <label>CPU思考傾向: 
+<label>CPU思考傾向: 
             <select id="cpu-difficulty-select" style="padding: 4px 8px; font-size: 13px;">
-                <option value="counter" selected>🛡️ 温存・逆転型 (カウンターAI)</option>
-                <option value="hard">🔥 ハード (手強い攻撃型)</option>
-                <option value="normal">🟢 ノーマル (標準)</option>
-            </select>
-        </label>
-        <label>🃏/🍖/🦅特殊枠: 
+<option selected="" value="counter">🛡️ 温存・逆転型 (カウンターAI)</option>
+<option value="hard">🔥 ハード (手強い攻撃型)</option>
+<option value="normal">🟢 ノーマル (標準)</option>
+</select>
+</label>
+<label>🃏/🍖/🦅特殊枠: 
             <select id="joker-rule-select" style="padding: 4px 8px; font-size: 13px;">
-                <option value="none">🚫 なし</option>
-                <option value="joker_only">🃏 ジョーカーのみ</option>
-                <option value="all" selected>🃏🍖🦅 全てあり</option>
-            </select>
+<option value="none">🚫 なし</option>
+<option value="joker_only">🃏 ジョーカーのみ</option>
+<option selected="" value="all">🃏🍖🦅 全てあり</option>
+</select>
+</label>
+<label style="cursor: pointer; user-select: none;">
+<input id="fast-cpu-toggle" type="checkbox"/> CPUの思考をスキップ
         </label>
-        <label style="cursor: pointer; user-select: none;">
-            <input type="checkbox" id="fast-cpu-toggle"> CPUの思考をスキップ
-        </label>
-        <button id="btn-start" class="btn-action" style="font-size:15px; padding:6px 16px;" onclick="startSoloGame()">CPUと1人プレイ</button>
-    </div>
-
-    <div class="npc-container" id="npcs-container"></div>
-
-    <div id="center-area">
-        <div id="game-info" style="display: none;">
-            <span style="font-size: 15px; font-weight: bold; color: #ffeb3b; margin-right: 15px;" id="turn-info"></span>
+<button class="btn-action" id="btn-start" onclick="startSoloGame()" style="font-size:15px; padding:6px 16px;">CPUと1人プレイ</button>
+</div>
+<div class="npc-container" id="npcs-container"></div>
+<div id="center-area">
+<div id="game-info" style="display: none;">
+<span id="turn-info" style="font-size: 15px; font-weight: bold; color: #ffeb3b; margin-right: 15px;"></span>
             山札: <span id="deck-count" style="font-size:15px; font-weight:bold;">0</span> 枚 | 
             墓地: <span id="graveyard-count" style="font-size:15px; font-weight:bold;">0</span> 枚 
             <span id="graveyard-top"></span>
-            <div style="font-size: 11px; color: #ccc; margin-top: 5px;">相性: ♠️ ＞ ❤️ ＞ ♣️ ＞ ♦️ ＞ ♠️ (有利側に+4補正 / ブタは無属性)</div>
-        </div>
-    </div>
-
-    <div id="log-box"></div>
-
-    <div id="player-container"></div>
+<div style="font-size: 11px; color: #ccc; margin-top: 5px;">相性: ♠️️ ＞ ❤️ ＞ ♣️️️️️ ＞ ♦️️ ＞ ♠️️ (有利側に+4補正 / ブタは無属性)</div>
 </div>
-
-<div id="rulebook-modal" class="modal-overlay" style="display: none;">
-    <div class="modal-content">
-        <h2 style="color: #ffeb3b; margin-top: 0; text-align: center;">📖 公式ルールブック</h2>
-        <div style="font-size: 13px; line-height: 1.6;">
-            <h3 style="color: #ffeb3b; border-bottom: 1px solid #ffeb3b; padding-bottom: 3px; margin-top: 5px;">🔄 1ターンの基本の流れ</h3>
-            <p>自分のターンは以下の<b>3つのフェイズ</b>を順番に進行します。</p>
-            <ol style="padding-left: 20px; margin-bottom: 10px;">
-                <li><b>【1. ドローフェイズ】</b><br>
-                    「山札から引く」「相手の手札から1枚引く（※1ターン目禁止）」「墓地の上2枚から1枚選んで引く」のいずれかを選択して1枚手札に加えます。</li>
-                <li><b>【2. 召喚フェイズ】（1ターンに1度）</b><br>
-                    手札2枚を消費して<b>「ビースト」または「ブタ🐷」を1体だけ召喚</b>できます（スキップ可。ただし手札8枚以上の場合は強制召喚）。ダメージを受けている最下位プレイヤーは1ゲームに1度だけ<b>「特殊枠ビースト（🃏/🍖/🦅）」</b>を召喚可能です。</li>
-                <li><b>【3. 攻撃フェイズ】（1ターンに1度）</b><br>
-                    自分の場のユニット1体を選び、<b>「相手ユニットへの攻撃」または「ダイレクトアタック」を1回だけ実行</b>できます（スキップ可。※1ターン目は攻撃制限あり）。
-                    <ul style="padding-left: 15px; margin-top: 4px;">
-                        <li><b>相手の場にユニットがいる場合：</b> 相手の「ビースト」または「ブタ」を指定して戦闘（※前衛護衛ルールあり）。</li>
-                        <li><b>相手の場がガラ空きの場合：</b> 相手プレイヤーを直接攻撃（ダイレクトアタック：一律2ダメージ）。</li>
-                    </ul>
-                </li>
-            </ol>
-
-            <h3 style="color: #00bcd4; margin-bottom: 5px;">【ユニット一覧と召喚コスト】</h3>
-            <ul>
-                <li><strong>ビースト (手札2枚):</strong> 同色・同数字ペア。攻撃力・防御力＝数字(1〜8)。1枚目のスートが属性になる。</li>
-                <li><strong>ブタ 🐷 (任意の手札2枚):</strong> 無属性。<b>攻撃力・防御力 0.5</b>。</li>
-                <li><strong>ジョーカービースト 🃏 (手札1枚＋山札ガチャ1枚):</strong> <b>【ピンチ時最下位限定ルール・1ゲーム1回（共通枠）・山札1枚以上が必要】</b><br>
-                <b>「ダメージを1以上受けている」かつ「最下位（同率含む）」</b>で召喚可能。手札1枚を選択し、山札から1枚めくったカードの属性・数字のビーストを召喚！撃破されても<b>持ち主へのダメージは0点</b>。</li>
-                <li><strong>グラトニービースト 🍖 (手札1枚＋相手の手札1枚):</strong> <b>【山札1枚以上が必要】</b><br>
-                自分の手札1枚と相手の手札1枚を抜き取ってペアにし召喚（引き抜かれた相手は山札から1枚補充）。属性と攻撃力は抜き取ったカードに準拠。<b>元の防御力は8</b>として扱われる。召喚ターン以外の自分のターン終了時に自分の場のユニット1体を墓地に送る必要あり。撃破されても<b>持ち主へのダメージは0点</b>。</li>
-                <li><strong>アドベントビースト 🦅 (手札1枚＋墓地選択1枚):</strong><br>
-                <b>【残り生存者3人以上かつ墓地ありの時のみ】</b><br>
-                手札1枚と墓地の上2枚から1枚を選びペアにし召喚。属性と攻撃力・防御力は選んだ墓地カードに準拠。召喚後、残った墓地と山札を合わせてシャッフル。<b>召喚したターンの終了時に攻撃力0・防御力0になる（属性相性は適用される）</b>。撃破・効果破壊問わず<b>被ダメージは常に0点</b>。</li>
-            </ul>
-
-            <h3 style="color: #00bcd4; margin-bottom: 5px;">【前衛ビースト（護衛）ルール】</h3>
-            <p>場に「ビースト（特殊ビースト含む）」が存在するプレイヤーの<b>「ブタ🐷」は攻撃対象に選ぶことができません</b>。相手のブタを攻撃するには、まず相手のビーストをすべて撃破する必要があります。</p>
-
-            <h3 style="color: #00bcd4; margin-bottom: 5px;">【属性相性】</h3>
-            <p><b>♠️ ＞ ❤️ ＞ ♣️ ＞ ♦️ ＞ ♠️</b><br>
-            攻撃・防御を問わず、<b>有利な側の数値に+4の補正</b>が入ります（※ブタは無属性）。</p>
-
-            <h3 style="color: #00bcd4; margin-bottom: 5px;">【戦闘とダメージ・属性効果】</h3>
-            <ul>
-                <li><strong>撃破ダメージ:</strong> ユニットが戦闘で撃破された場合、ビースト・ブタ問わず<b>持ち主が1ダメージ</b>を受け、カードは墓地へ送られます（※特殊枠ビーストは被ダメージ0点）。</li>
-                <li><strong>ダイレクトアタック:</strong> 場がガラ空きの相手へ一律<b>2ダメージ</b>。</li>
-                <li><strong>♠️スペード効果:</strong> スペードのビーストは<b>攻撃力・防御力が常時+1</b>されます（グラトニーの場合も同様）。</li>
-                <li><strong>❤️ハート効果:</strong> 相手からの攻撃を1度だけ無効化（タップ状態になる）。</li>
-                <li><strong>♦️ダイヤ効果:</strong> 相手ユニット撃破時に<b>追加1ダメージ！</b></li>
-                <li><strong>♣️クラブ効果:</strong> ダイレクトアタック成功時に発動。「1体効果破壊」または「1ドロー」を選択。</li>
-            </ul>
-
-            <h3 style="color: #00bcd4; margin-bottom: 5px;">【山札切れ時の処理】</h3>
-            <p>山札からカードを引く時に山札が0枚の場合、全員の手札、墓地を全て山札にしてシャッフルし、生存プレイヤー全員に手札を6枚配り終えた後、その後山札から1枚引きます。<br>
-            生存プレイヤー全員に手札を配りきれなかった場合、または配りきったけど山札が0枚の場合は、場のカードを含む全てのカードを山札にしてシャッフルし、生存プレイヤー全員に手札を6枚配り終えた後、その後山札から1枚引きます。</p>
-        </div>
-        <button onclick="closeRulebookModal()" style="width: 100%; padding: 10px; margin-top: 15px; font-weight: bold; background: #ff9800; color: white;">閉じる</button>
-    </div>
 </div>
-
+<div id="log-box"></div>
+<div id="player-container"></div>
+</div>
+<div class="modal-overlay" id="rulebook-modal" style="display: none;">
+<div class="modal-content">
+<h2 style="color: #ffeb3b; margin-top: 0; text-align: center;">📖 遊び方・ルールブック</h2>
+<div class="rulebook-body">
+<div class="rulebook-intro">
+<strong>ゲームの目的</strong><br/>
+    HPが0以下になると脱落します。最後まで生き残ったプレイヤーが勝者です。
+    最大4人で対戦し、空席はCPUが担当します。
+  </div>
+<section class="rulebook-section">
+<h3>1. ゲーム開始時</h3>
+<ul class="rulebook-list">
+<li>各プレイヤーは、設定された初期HP（初期設定は10）と手札7枚でゲームを始めます。</li>
+<li>自分のターンは、<strong>ドロー → 召喚 → 攻撃</strong>の順で進みます。</li>
+<li>ゲーム開始前に選ぶ「特殊枠」の設定は、全プレイヤーに適用されます。
+        <ul class="rulebook-sublist">
+<li><strong>なし：</strong>特殊ビーストを使用しません。</li>
+<li><strong>ジョーカーのみ：</strong>ジョーカービーストだけ使用できます。</li>
+<li><strong>全てあり：</strong>ジョーカー、グラトニー、アドベントを使用できます。</li>
+</ul>
+</li>
+</ul>
+</section>
+<section class="rulebook-section">
+<h3>2. 1ターンの進め方</h3>
+<div class="rulebook-card">
+<h4>フェイズ① ドロー：カードを1枚引く</h4>
+      次の3つから<strong>1つを選んで</strong>手札に加えます。
+      <ul class="rulebook-list">
+<li><strong>山札から引く：</strong>山札の一番上から1枚引きます。</li>
+<li><strong>相手の手札から引く：</strong>生存している相手の手札から1枚選びます。引かれた相手は、山札から1枚補充します。<strong>自分の最初のターンには選べません。</strong></li>
+<li><strong>墓地から引く：</strong>墓地の上から2枚のうち1枚を選びます。墓地が1枚だけなら、そのカードを引きます。墓地にカードがなければ選べません。</li>
+</ul>
+</div>
+<div class="rulebook-card">
+<h4>フェイズ② 召喚：ユニットを1体出す</h4>
+      通常は手札2枚を使って<strong>ビーストまたはブタを1体</strong>召喚します。条件を満たしている場合は、通常召喚の代わりに特殊ビーストを1体召喚することもできます。召喚をスキップすることもできますが、<strong>手札が8枚以上ある場合はスキップできません。</strong>
+</div>
+<div class="rulebook-card">
+<h4>フェイズ③ 攻撃：攻撃するか、スキップする</h4>
+      自分の場のユニットを1体選び、攻撃を1回行うか、攻撃をスキップします。
+      <ul class="rulebook-list">
+<li><strong>ユニットへの攻撃：</strong>攻撃可能な相手ユニットを1体選びます。</li>
+<li><strong>ダイレクトアタック：</strong>場にユニットがいない相手を直接攻撃し、HPを2減らします。</li>
+</ul>
+<div class="rulebook-note"><strong>最初のターンの制限：</strong>各プレイヤーは、自分の最初のターンの攻撃フェイズをスキップします。また、自分の最初のターンは相手の手札からカードを引けません。</div>
+</div>
+</section>
+<section class="rulebook-section">
+<h3>3. 召喚できるユニット</h3>
+<div class="rulebook-card">
+<h4>ビースト ✨　手札2枚</h4>
+<ul class="rulebook-list">
+<li>数字が同じで、色が同じカード2枚を使います。</li>
+<li>色の組み合わせは、黒（♠️スペード・♣️️️️クラブ）同士、または赤（❤️ハート・♦️ダイヤ）同士です。</li>
+<li>攻撃力・防御力はカードの数字です。♠️スペード属性なら、通常時の攻撃力・防御力に+1されます。</li>
+<li><strong>属性は、召喚時に最初に選んだカードのスート（マーク）</strong>で決まります。</li>
+</ul>
+</div>
+<div class="rulebook-card">
+<h4>ブタ 🐷　手札2枚</h4>
+      好きなカードを2枚使って召喚します。属性はなく、攻撃力・防御力は<strong>0.5</strong>です。ブタは、相手の場にビーストがいる間は攻撃対象にできません。
+    </div>
+<div class="rulebook-note"><strong>前衛護衛ルール：</strong>相手の場にビースト（特殊ビーストを含む）が1体でもいる場合、ブタは攻撃対象に選べません。相手のビーストをすべて倒すと、ブタを攻撃できるようになります。ダイレクトアタックは、相手の場が空のときだけ行えます。</div>
+</section>
+<section class="rulebook-section">
+<h3>4. 特殊ビースト 🃏🍖🦅</h3>
+<div class="rulebook-note">
+<strong>共通の召喚条件</strong><br/>
+      自分のHPが初期HPより低く、かつ生存プレイヤーの中でHPが最も低いときに召喚できます。同率最下位でも条件を満たします。さらに、特殊ビーストは<strong>1人につきゲーム中1回だけ</strong>です。ジョーカー・グラトニー・アドベントは共通の使用枠なので、どれか1種類を召喚すると、ほかの種類は召喚できません。
+    </div>
+<div class="rulebook-card">
+<h4>ジョーカービースト 🃏　手札1枚＋山札1枚</h4>
+      手札1枚をコストにし、山札からランダムに引いた1枚と組み合わせて召喚します。攻撃力・防御力と属性は、山札から引いたカードを基準に決まります。山札にカードが1枚以上必要です。
+    </div>
+<div class="rulebook-card">
+<h4>グラトニービースト 🍖　手札1枚＋相手の手札1枚</h4>
+      自分の手札1枚をコストにし、相手の手札から選んだ1枚と組み合わせて召喚します。カードを取られた相手は山札から1枚補充します。攻撃力と属性は、相手から取ったカードを基準に決まり、防御力は<strong>8</strong>（♠️スペード属性なら<strong>9</strong>）です。山札にカードが1枚以上あり、手札を持つ相手がいる必要があります。<br/>
+<strong>維持コスト：</strong>召喚したターンの終了時は除き、その後の自分のターン終了時に、自分の場のユニット1体を墓地へ送ります。グラトニービースト自身を選ぶこともできます。
+    </div>
+<div class="rulebook-card">
+<h4>アドベントビースト 🦅　手札1枚＋墓地のカード1枚</h4>
+      手札1枚をコストにし、墓地の上から最大2枚のうち1枚を選んで組み合わせます。残った墓地のカードは山札に加え、山札と一緒にシャッフルします。攻撃力・属性は選んだ墓地カードを基準に決まります。<strong>生存プレイヤーが3人以上</strong>で、墓地にカードがある場合に召喚できます。<br/>
+<strong>召喚したターンの終了時に攻撃力・防御力が0</strong>になります。属性相性は引き続き適用されます。
+    </div>
+<p>特殊ビーストが戦闘で倒された場合、持ち主への通常の撃破ダメージは発生しません。</p>
+</section>
+<section class="rulebook-section">
+<h3>5. 戦闘・HPダメージ</h3>
+<ol class="rulebook-list">
+<li>攻撃側の攻撃力と、防御側の防御力を比べます。攻撃力が防御力を下回る場合、その相手には攻撃できません。</li>
+<li>攻撃力が防御力以上なら、通常は防御側ユニットを撃破します。撃破されたユニットを構成するカードは墓地へ送られます。</li>
+<li>通常のビーストやブタが撃破された場合、その持ち主はHPを1失います。特殊ビーストが撃破された場合、通常の撃破ダメージは発生しません。</li>
+<li>場にユニットがいない相手へのダイレクトアタックは、相手のHPを2減らします。</li>
+<li>HPが0以下になったプレイヤーは脱落します。脱落者が出てゲームが続く場合、そのプレイヤーの手札・場のカードと、山札・墓地を合わせてシャッフルし、新しい山札にします。</li>
+</ol>
+<div class="rulebook-note"><strong>ハート属性の耐久効果：</strong>❤️ハート属性のユニットは、最初に受けた撃破可能な攻撃を1回耐え、タップ状態になります。その攻撃では撃破されず、通常の撃破ダメージも発生しません。タップ後に再び撃破可能な攻撃を受けると、通常どおり撃破されます。</div>
+</section>
+<section class="rulebook-section">
+<h3>6. 属性相性と各スートの効果</h3>
+<div class="rulebook-intro"><strong>属性相性：</strong>♠️スペード ＞ ❤️ハート ＞ ♣️️️️クラブ ＞ ♦️ダイヤ ＞ ♠️スペード<br/>
+      相性で有利な側の攻撃力または防御力に<strong>+4</strong>します。相性はビースト同士の戦闘で適用され、属性を持たないブタには適用されません。</div>
+<ul class="rulebook-list">
+<li><strong>♠️ スペード：</strong>通常時の攻撃力・防御力が+1になります。</li>
+<li><strong>❤️ ハート：</strong>上記のとおり、撃破可能な攻撃を1回耐えてタップ状態になります。</li>
+<li>♦️ <strong>ダイヤ：</strong>自分の♦️️属性ユニットが相手ユニットを撃破したとき、その持ち主に追加で1ダメージを与えます。</li>
+<li><strong>♣️️️️ クラブ：</strong>自分の♣️️️️属性ユニットがダイレクトアタックに成功すると、次のどちらかを選びます。
+        <ul class="rulebook-sublist">
+<li>場のユニット1体を効果破壊する（通常の撃破ダメージは発生しません）。</li>
+<li>カードを1枚引く。山札・相手の手札・墓地から選べます。</li>
+</ul>
+        場にユニットが1体もいない場合、効果破壊は選べず、ドローを選びます。
+      </li>
+</ul>
+</section>
+<section class="rulebook-section">
+<h3>7. 山札がなくなったとき</h3>
+<ol class="rulebook-list">
+<li>山札からカードを引くときに山札が0枚なら、全員の手札と墓地のカードを集め、シャッフルして山札を作り直します。</li>
+<li>生存プレイヤー全員に手札を6枚ずつ配ります。その後、カードを引こうとしたプレイヤーが山札から1枚引きます。</li>
+<li>6枚ずつ配る分と、その後に引く1枚を用意できない場合は、生存プレイヤーの場のユニットを構成するカードも回収してシャッフルし、配り直します。カードが足りないときは、手元にある分だけ配り、引けるカードが残っていれば1枚引きます。</li>
+</ol>
+</section>
+</div>
+<button onclick="closeRulebookModal()" style="width: 100%; padding: 10px; margin-top: 15px; font-weight: bold; background: #ff9800; color: white;">閉じる</button>
+</div>
+</div>
 <script src="/socket.io/socket.io.js"></script>
 <script>
 const SUITS = ['spade', 'club', 'heart', 'diamond'];
-const SUIT_ICONS = { spade: '♠️', heart: '❤️', club: '♣️', diamond: '♦️' };
+const SUIT_ICONS = { spade: '♠️️', heart: '❤️', club: '♣️️️️', diamond: '♦️️️' };
 const SUIT_ORDER = { spade: 0, club: 1, heart: 2, diamond: 3 };
 const SUIT_COLOR_GROUP = { spade: 0, club: 0, heart: 1, diamond: 1 }; 
 const BLACK_SUITS = ['spade', 'club'];
@@ -1048,7 +1131,7 @@ function handleClubChooseEffect(choice) {
         const totalUnits = players.reduce((sum, pl) => sum + pl.field.length, 0);
         if (totalUnits > 0) {
             currentPhase = 'CLUB_SELECT_DESTROY_TARGET';
-            addLog(`♣効果：効果破壊するフィールド上のユニットを選択してください。`, 'important');
+            addLog(`♣️️️効果：効果破壊するフィールド上のユニットを選択してください。`, 'important');
         } else {
             alert("フィールド上に破壊できるユニットが存在しません。1ドローを選択します。");
             currentPhase = 'CLUB_DRAW_CHOICE';
@@ -1063,7 +1146,7 @@ function handleClubDrawFromDeck() {
     const p = players[turnIndex];
     const card = performDraw(p, 'deck');
     const cardInfo = (networkRole === 'solo' && card) ? ` [${SUIT_ICONS[card.suit]}${card.val}]` : '';
-    addLog(`♣️効果発動！ ${p.name} は山札からカード${cardInfo}を1枚引いた。`, 'attack');
+    addLog(`♣️️️️効果発動！ ${p.name} は山札からカード${cardInfo}を1枚引いた。`, 'attack');
     afterClubDraw();
 }
 
@@ -1115,7 +1198,7 @@ function handleClubStealCard(targetPId, cardIdx) {
 
     const card = performDraw(p, 'steal', targetPId, cardIdx);
     const cardInfo = (networkRole === 'solo' && card) ? ` [${SUIT_ICONS[card.suit]}${card.val}]` : '';
-    addLog(`♣効果発動！ ${p.name} は ${targetP.name} の手札からカード${cardInfo}を1枚引いた！`, 'attack');
+    addLog(`♣️️️効果発動！ ${p.name} は ${targetP.name} の手札からカード${cardInfo}を1枚引いた！`, 'attack');
     addLog(`🔄 ${targetP.name} は山札からカードを1枚補充した。`);
     afterClubDraw();
 }
@@ -1133,7 +1216,7 @@ function handleSelectClubDestroyTarget(targetPId, uIdx) {
 
     sendUnitToGraveyard(targetUnit);
     targetP.field.splice(uIdx, 1);
-    addLog(`💥 ♣️効果発動！ ${targetP.name} の ${uName} を効果破壊した！（被ダメージ0点）`, 'attack');
+    addLog(`💥 ♣️️️️効果発動！ ${targetP.name} の ${uName} を効果破壊した！（被ダメージ0点）`, 'attack');
 
     renderBoard();
     finishTurn();
@@ -1276,7 +1359,7 @@ function handleSummonBeast() {
     const c2 = p.hand[selectedHandIndices[1]];
 
     if (c1.val !== c2.val || !isSameColor(c1.suit, c2.suit)) {
-        alert("同じ数字かつ同色のペア（♠/♣️ または ❤️/♦）を選んでください。");
+        alert("同じ数字かつ同色のペア（♠️/♣️️️️ または ❤️/♦️）を選んでください。");
         return;
     }
 
@@ -1690,7 +1773,7 @@ async function executeAttack(attackerP, attackerUnit, defenderP, defenderUnit) {
                     const targetUName = defenderUnitName(target.unit);
                     sendUnitToGraveyard(target.unit);
                     target.player.field.splice(target.uIdx, 1);
-                    addLog(`💥 ♣️効果発動！ ${attackerP.name} は ${target.player.name} の ${targetUName} を効果破壊した！（被ダメージ0点）`, 'attack');
+                    addLog(`💥 ♣️️️️効果発動！ ${attackerP.name} は ${target.player.name} の ${targetUName} を効果破壊した！（被ダメージ0点）`, 'attack');
                     currentPhase = 'WAIT';
                     renderBoard();
                     await cpuSleep(800);
@@ -1707,20 +1790,20 @@ async function executeAttack(attackerP, attackerUnit, defenderP, defenderUnit) {
 
                     if (gyPairChoice !== -1) {
                         performDraw(attackerP, 'graveyard', null, null, gyPairChoice);
-                        addLog(`♣効果発動！ ${attackerP.name} は墓地から手札とペアになるカードを引き当てた！`, 'attack');
+                        addLog(`♣️️️️効果発動！ ${attackerP.name} は墓地から手札とペアになるカードを引き当てた！`, 'attack');
                     } else if (livingOpponents.length > 0) {
                         livingOpponents.sort((a, b) => b.hand.length - a.hand.length || b.hp - a.hp);
                         const targetP = livingOpponents[0];
                         const cardIdx = Math.floor(Math.random() * targetP.hand.length);
                         const card = performDraw(attackerP, 'steal', targetP.id, cardIdx);
                         const cardInfo = (networkRole === 'solo' && targetP.id === 0 && card) ? ` [${SUIT_ICONS[card.suit]}${card.val}]` : '';
-                        addLog(`♣️効果発動！ ${attackerP.name} は ${targetP.name} の手札からカード${cardInfo}を1枚引いた！`, 'attack');
+                        addLog(`♣️️️️️効果発動！ ${attackerP.name} は ${targetP.name} の手札からカード${cardInfo}を1枚引いた！`, 'attack');
                         addLog(`🔄 ${targetP.name} は山札からカードを1枚補充した。`);
                     } else if (graveyard.length > 0) {
                         performDraw(attackerP, 'graveyard', null, null, 0);
                     } else {
                         performDraw(attackerP, 'deck');
-                        addLog(`♣効果発動！ ${attackerP.name} は山札から1枚引いた。`, 'attack');
+                        addLog(`♣️️️️効果発動！ ${attackerP.name} は山札から1枚引いた。`, 'attack');
                     }
                     currentPhase = 'WAIT';
                     renderBoard();
@@ -1730,7 +1813,7 @@ async function executeAttack(attackerP, attackerUnit, defenderP, defenderUnit) {
                 }
             } else {
                 currentPhase = 'CLUB_CHOICE';
-                addLog(`♣️効果発動！ 発動する効果を選択してください。`, 'important');
+                addLog(`♣️️️️️効果発動！ 発動する効果を選択してください。`, 'important');
                 renderBoard();
                 return;
             }
@@ -1787,7 +1870,7 @@ async function executeAttack(attackerP, attackerUnit, defenderP, defenderUnit) {
             }
 
             if (attackerUnit.suit === 'diamond' && defenderP.alive) {
-                addLog(`♦️効果発動！ ${defenderP.name} に追加1ダメージ！`, 'attack');
+                addLog(`♦️️効果発動！ ${defenderP.name} に追加1ダメージ！`, 'attack');
                 defenderP.hp -= 1;
             }
 

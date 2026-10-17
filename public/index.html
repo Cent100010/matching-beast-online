@@ -859,6 +859,110 @@
     }
 
 </style>
+
+<style id="portrait-layout-refinements">
+  /* The header's right-hand stack keeps the rules and leave-room actions together. */
+  #header-side-actions {
+    grid-column: 2;
+    grid-row: 1;
+    display: flex;
+    flex-direction: row;
+    align-items: flex-start;
+    justify-content: flex-end;
+    gap: 7px;
+    min-width: 0;
+  }
+  #header-side-actions #rulebook-toggle {
+    width: auto;
+    max-width: none;
+    grid-column: auto;
+    grid-row: auto;
+    justify-self: auto;
+    margin: 0;
+  }
+  #header-side-actions #online-leave-btn {
+    background: #455a64;
+    color: #fff;
+    border: 1px solid rgba(255,255,255,.18);
+    border-radius: 6px;
+    font-weight: 700;
+    cursor: pointer;
+    min-width: 0;
+    margin: 0;
+    padding: 6px 9px;
+    white-space: nowrap;
+    line-height: 1.2;
+  }
+  #header-side-actions #online-leave-btn:hover:not(:disabled) {
+    background: #546e7a;
+  }
+  /* Once a match begins the lobby has no visible controls; the exit button now lives in the header. */
+  #online-panel.match-started { display: none !important; }
+
+  @media (max-width: 650px) and (orientation: portrait) {
+    #game-header {
+      grid-template-columns: minmax(0, 1fr) 62px;
+      align-items: start;
+      gap: 4px;
+      margin-bottom: 5px;
+    }
+    #header-side-actions {
+      width: 62px;
+      flex-direction: column;
+      align-items: stretch;
+      justify-content: flex-start;
+      gap: 3px;
+    }
+    #header-side-actions #rulebook-toggle,
+    #header-side-actions #online-leave-btn {
+      display: block;
+      width: 100%;
+      max-width: 100%;
+      min-width: 0;
+      margin: 0;
+      padding: 5px 2px;
+      font-size: 10px;
+      line-height: 1.15;
+      text-align: center;
+      white-space: normal;
+      overflow-wrap: anywhere;
+      border-radius: 6px;
+    }
+    #header-side-actions #rulebook-toggle {
+      font-size: 11px;
+      white-space: nowrap;
+    }
+    #header-side-actions #online-leave-btn {
+      font-size: 10px;
+      padding: 5px 1px;
+    }
+    /* Portrait phones: commands appear before the heading and before player cards, not at the bottom. */
+    #game-play-layout.game-active {
+      grid-template-columns: minmax(0, 1fr);
+      grid-template-areas: "commands" "players";
+      gap: 5px;
+    }
+    #command-panel {
+      grid-area: commands;
+      display: flex;
+      flex-direction: column;
+      position: static;
+      max-height: none;
+      overflow: visible;
+      padding: 6px;
+      margin: 0;
+    }
+    #command-list { order: 0; }
+    #command-tools { order: 1; margin-top: 3px; }
+    #center-area { order: 2; margin: 4px 0 0; }
+    #command-list .controls {
+      margin-top: 0;
+      margin-bottom: 4px;
+    }
+    #command-tools .panel-heading { margin-bottom: 0; }
+  }
+</style>
+
 </head>
 <body>
 <div id="game-container">
@@ -868,7 +972,10 @@
     <div id="my-hand-zone" class="hand-zone" aria-label="カードを選択する手札"></div>
     <div id="hand-prompt">ゲーム開始後、ここに手札が表示されます。</div>
   </section>
-  <button aria-label="ルールブックを開く" class="btn-rulebook" id="rulebook-toggle" onclick="openRulebookModal()" type="button">📖 ルールブック</button>
+  <div id="header-side-actions" aria-label="補助操作">
+  <button aria-label="ルールを開く" class="btn-rulebook" id="rulebook-toggle" onclick="openRulebookModal()" type="button">📖 ルール</button>
+  <button aria-label="部屋を退出" id="online-leave-btn" onclick="leaveOnlineRoom()" style="display:none;">退出</button>
+</div>
 </div>
 <section aria-label="オンライン対戦" id="online-panel">
 <h2>🌐 オンライン対戦</h2>
@@ -884,7 +991,7 @@
 <div id="online-seats"></div>
 <div class="online-row">
 <button class="btn-attack" disabled="" id="online-start-btn" onclick="startOnlineMatch()">対戦開始（空席はCPU）</button>
-<button id="online-leave-btn" onclick="leaveOnlineRoom()" style="display:none;">部屋を退出</button>
+
 </div>
 </section>
 <div id="setup-panel">

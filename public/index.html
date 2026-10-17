@@ -17,34 +17,24 @@
         flex-direction: column;
         align-items: center;
     }
-    #game-container { width: 100%; max-width: 1000px; }
+    #game-container { width: 100%; max-width: 1440px; }
     #game-header {
-        display: grid;
-        grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+        display: flex;
+        justify-content: flex-end;
         align-items: center;
         gap: 8px;
         margin-bottom: 10px;
-    }
-    #game-header h1 {
-        grid-column: 2;
-        text-align: center;
-        margin: 0;
-        font-size: 24px;
-        text-shadow: 1px 1px 2px #000;
-        white-space: nowrap;
+        min-height: 0;
     }
     #rulebook-toggle {
-        grid-column: 3;
-        justify-self: end;
         font-size: 13px;
         padding: 7px 10px;
         white-space: nowrap;
         min-width: 0;
     }
     @media (max-width: 650px) {
-        #game-header { grid-template-columns: minmax(0, 1fr) auto; gap: 6px; }
-        #game-header h1 { grid-column: 1; justify-self: start; font-size: 20px; white-space: normal; }
-        #rulebook-toggle { grid-column: 2; font-size: 12px; padding: 6px 8px; }
+        #game-header { gap: 6px; margin-bottom: 6px; }
+        #rulebook-toggle { font-size: 11px; padding: 5px 7px; }
     }
     
     #setup-panel {
@@ -449,13 +439,436 @@
       #rulebook-modal .rulebook-section h3 { font-size: 16px; }
       #rulebook-modal .rulebook-card { padding: 9px; }
     }
+
+
+    /* Responsive play layout: the local hand is embedded inside the local player card. */
+    #game-play-layout { display: none; }
+    #game-play-layout.game-active {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(230px, 290px);
+        grid-template-areas: "players commands";
+        align-items: start;
+        gap: 10px;
+        width: 100%;
+    }
+    #players-grid {
+        grid-area: players;
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        align-content: start;
+        gap: 8px;
+        min-width: 0;
+    }
+    #npcs-container, #player-container { display: contents; }
+    .npc-area, .player-area {
+        min-width: 0;
+        margin: 0;
+        overflow: hidden;
+    }
+    .seat-0 { border-color: #159DCC; }
+    .seat-1 { border-color: #4C56C8; }
+    .seat-2 { border-color: #E94B57; }
+    .seat-3 { border-color: #F08A36; }
+    .seat-0.my-turn, .seat-1.my-turn, .seat-2.my-turn, .seat-3.my-turn { border-color: #ffeb3b; }
+    #my-hand-panel, #command-panel {
+        background: rgba(0,0,0,.34);
+        border: 1px solid rgba(255,255,255,.22);
+        border-radius: 8px;
+        padding: 10px;
+        min-width: 0;
+    }
+    #my-hand-panel {
+        background: rgba(0,0,0,.18);
+        border: 1px solid rgba(255,255,255,.18);
+        border-radius: 6px;
+        padding: 6px;
+        margin: 5px 0 6px;
+        min-width: 0;
+    }
+    .player-area #my-hand-panel .panel-heading { font-size: 12px; margin-bottom: 5px; padding-bottom: 4px; }
+    .player-area #my-hand-zone {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: flex-start;
+        align-content: flex-start;
+        gap: 3px;
+        min-height: 62px;
+        margin-top: 4px;
+        min-width: 0;
+    }
+    .player-area #my-hand-zone .card { width: 34px; height: 51px; font-size: 16px; margin: 1px; }
+    .player-hand-warning { font-size: 10px; line-height: 1.3; color: #ffeb3b; margin: 3px 0; }
+    .opponent-hand-area { display: flex; align-items: center; justify-content: space-between; gap: 5px; margin: 3px 0 5px; }
+    .opponent-hand-area .zone-title { font-size: 11px; margin: 0; width: auto; }
+    .opponent-hand-area .hand-zone { min-height: 0; margin: 0; padding: 0; }
+    .opponent-hand-area .hand-zone .card { width: 28px; height: 40px; margin: 0; }
+    #command-panel {
+        grid-area: commands;
+        position: sticky;
+        top: 8px;
+        max-height: calc(100vh - 115px);
+        overflow-y: auto;
+        overscroll-behavior: contain;
+    }
+    .panel-heading {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 6px;
+        font-size: 15px;
+        font-weight: bold;
+        border-bottom: 1px solid rgba(255,255,255,.2);
+        padding-bottom: 7px;
+        margin-bottom: 7px;
+    }
+    #my-hand-count { color: #ffeb3b; font-size: 12px; white-space: nowrap; }
+    #my-hand-zone {
+        min-height: 62px;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: flex-start;
+        align-content: flex-start;
+        gap: 3px;
+        margin-top: 4px;
+    }
+    #my-hand-zone .card {
+        width: 40px;
+        height: 60px;
+        font-size: 18px;
+        margin: 1px;
+    }
+    #hand-prompt { color: #ffeb3b; font-size: 11px; line-height: 1.4; margin-top: 8px; }
+    #command-tools { display: flex; align-items: center; justify-content: space-between; gap: 6px; }
+    #command-tools .panel-heading { border: 0; margin: 0; padding: 0; }
+    #log-toggle { background: #4c56c8; color: white; white-space: nowrap; }
+    #log-toggle:hover:not(:disabled) { background: #4c56c8; filter: brightness(1.12); }
+    #command-list { min-width: 0; }
+    #command-list .controls {
+        display: flex;
+        flex-direction: column;
+        flex-wrap: nowrap;
+        align-items: stretch;
+        gap: 6px;
+        margin-top: 8px;
+        width: 100%;
+    }
+    #command-list .controls button { width: 100%; white-space: normal; overflow-wrap: anywhere; }
+    #command-list .command-empty { color: #ddd; font-size: 12px; line-height: 1.5; margin: 10px 0 2px; }
+    #center-area { text-align: left; margin: 8px 0; min-height: 0; }
+    #game-info { font-size: 12px; line-height: 1.5; }
+    #turn-info { display: block; margin-bottom: 5px; }
+    #graveyard-top { height: 42px; }
+    #online-panel.match-started { grid-column: 1 / -1; }
+
+    /* A single representative card opens a temporary picker when a specific hidden card must be selected. */
+    .opponent-hand-picker-content { max-width: 560px; width: min(94vw, 560px); }
+    .opponent-hand-picker-content h2 { color: #ffeb3b; margin: 0; font-size: 18px; }
+    .opponent-hand-picker-grid {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        align-items: flex-start;
+        gap: 8px;
+        max-height: 60vh;
+        overflow-y: auto;
+        padding: 10px 3px;
+    }
+    .opponent-hand-choice {
+        background: transparent;
+        color: white;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 4px;
+        padding: 4px;
+        min-width: 48px;
+    }
+    .opponent-hand-choice .card { width: 35px; height: 52px; margin: 0; pointer-events: none; }
+    .opponent-hand-choice span { font-size: 11px; color: #ddd; }
+
+    /* Log is opened as a separate panel, like the rulebook. */
+    .log-modal-content { max-width: 760px; width: min(94vw, 760px); }
+    .log-modal-header { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+    .log-modal-header h2 { color: #ffeb3b; margin: 0 0 12px; font-size: 20px; }
+    .log-modal-content #log-box {
+        height: min(62vh, 560px);
+        max-height: 62vh;
+        margin: 0;
+        font-size: 13px;
+    }
+
+    /* Portrait phones: 2x2 player overview with the local hand inside its own information panel. */
+    @media (max-width: 650px) {
+        body { padding: 5px; }
+        #game-container { width: 100%; }
+        #game-header { margin-bottom: 5px; }
+        #rulebook-toggle { font-size: 11px; padding: 5px 7px; }
+        #game-play-layout.game-active {
+            grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+            grid-template-areas: "players players" "commands commands";
+            gap: 6px;
+        }
+        #players-grid { gap: 4px; }
+        .npc-area, .player-area {
+            padding: 5px;
+            border-width: 1.5px;
+            border-radius: 6px;
+        }
+        .area-header {
+            align-items: flex-start;
+            flex-wrap: wrap;
+            gap: 3px;
+            margin-bottom: 4px;
+            padding-bottom: 3px;
+        }
+        .area-title { font-size: 11px; line-height: 1.2; }
+        .hp-badge { font-size: 10px; }
+        .joker-badge { font-size: 8px; padding: 1px 3px; margin-right: 1px; }
+        .player-hand-summary { font-size: 10px; line-height: 1.3; }
+        .opponent-hand-area .zone-title { font-size: 9px; margin-bottom: 2px; }
+        .player-area .hand-zone, .npc-area .hand-zone {
+            min-height: 0;
+            gap: 1px;
+            margin-top: 2px;
+            align-items: flex-start;
+        }
+        .player-area #my-hand-panel {
+            padding: 4px;
+            margin: 4px 0 5px;
+            border-radius: 4px;
+            background: rgba(0,0,0,.16);
+        }
+        .player-area #my-hand-zone {
+            flex-wrap: nowrap;
+            overflow-x: auto;
+            overflow-y: hidden;
+            -webkit-overflow-scrolling: touch;
+            overscroll-behavior-x: contain;
+            scrollbar-width: thin;
+            min-height: 51px;
+            padding: 2px 1px 5px;
+            gap: 3px;
+        }
+        .player-area #my-hand-zone .card {
+            flex: 0 0 auto;
+            width: clamp(29px, 8vw, 33px);
+            height: clamp(44px, 12.2vw, 50px);
+            font-size: 15px;
+            margin: 0;
+            border-radius: 3px;
+        }
+        .player-area #my-hand-zone .card.selected { transform: translateY(-3px); }
+        .opponent-hand-area .zone-title { font-size: 9px; }
+        .opponent-hand-area .hand-zone .card { width: 22px; height: 32px; font-size: 11px; }
+        .player-hand-warning { font-size: 9px; margin: 2px 0; }
+        .player-area .hand-zone .card, .npc-area .hand-zone .card {
+            width: 19px;
+            height: 28px;
+            font-size: 10px;
+            margin: 0;
+            border-width: 1px;
+            border-radius: 2px;
+        }
+        .player-area .board-section, .npc-area .board-section { margin-top: 3px; gap: 2px; }
+        .player-area .zone, .npc-area .zone {
+            flex: 1 1 auto;
+            width: 100%;
+            min-width: 0;
+            height: 62px;
+            min-height: 62px;
+            max-height: 62px;
+            padding: 3px;
+            gap: 2px;
+            overflow-y: auto;
+        }
+        .player-area .zone-title, .npc-area .zone-title { font-size: 9px; margin-bottom: 2px; }
+        .unit {
+            min-width: 38px;
+            height: 45px;
+            padding: 2px;
+            font-size: 8px;
+            border-radius: 3px;
+        }
+        .revealed-cards { font-size: 7px; padding: 0 1px; }
+        .unit.attacking-selected::after, .unit.protected::after, .unit.too-strong::after { font-size: 6px; top: -5px; }
+        #my-hand-panel, #command-panel { padding: 6px; border-radius: 6px; }
+        .panel-heading { font-size: 12px; padding-bottom: 5px; margin-bottom: 5px; }
+        #my-hand-count { font-size: 10px; }
+        #my-hand-zone { gap: 2px; min-height: 0; }
+        #my-hand-zone .card {
+            width: clamp(25px, 8.1vw, 32px);
+            height: clamp(38px, 12.2vw, 48px);
+            font-size: 14px;
+            margin: 0;
+            border-radius: 3px;
+            border-width: 1.5px;
+        }
+        #my-hand-zone .card.selected { transform: translateY(-3px); }
+        #hand-prompt { font-size: 10px; margin-top: 6px; }
+        #command-panel {
+            position: static;
+            max-height: 42vh;
+            overflow-y: auto;
+        }
+        #command-tools { align-items: flex-start; flex-wrap: wrap; }
+        #command-tools .panel-heading { font-size: 12px; }
+        #log-toggle { font-size: 10px; padding: 5px 6px; }
+        #center-area { margin: 5px 0; font-size: 10px; }
+        #game-info { font-size: 10px; }
+        #turn-info { font-size: 11px !important; margin-bottom: 3px; }
+        #graveyard-top { height: 34px; }
+        #graveyard-top .card { width: 20px; height: 30px; font-size: 10px; }
+        #command-list .controls {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 4px;
+            margin-top: 5px;
+        }
+        #command-list .controls button { width: 100%; padding: 7px 5px; font-size: 10px; line-height: 1.2; }
+        #command-list .controls span { grid-column: 1 / -1; font-size: 10px !important; line-height: 1.35; }
+        .opponent-hand-picker-content { width: 96%; padding: 12px; }
+        .opponent-hand-picker-content h2 { font-size: 16px; }
+        .opponent-hand-picker-grid { gap: 5px; padding: 8px 1px; }
+        .opponent-hand-choice { min-width: 34px; padding: 2px; gap: 3px; }
+        .opponent-hand-choice .card { width: 25px; height: 38px; }
+        .opponent-hand-choice span { font-size: 10px; }
+        .log-modal-content { width: 96%; padding: 12px; }
+        .log-modal-header h2 { font-size: 17px; }
+        .log-modal-content #log-box { height: 65vh; max-height: 65vh; font-size: 11px; padding: 7px; }
+    }
+
+    @media (max-width: 360px) {
+        #my-hand-zone .card { width: 24px; height: 36px; font-size: 13px; }
+        .player-area .hand-zone .card, .npc-area .hand-zone .card { width: 17px; height: 25px; }
+        .area-title { font-size: 10px; }
+        .unit { min-width: 34px; }
+    }
+
+
+
+    /* Final responsive layout: hand and rulebook share the top row; players remain 2x2 below. */
+    #game-header {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        align-items: start;
+        justify-content: initial;
+        gap: 8px;
+        width: 100%;
+        margin-bottom: 8px;
+    }
+    #my-hand-panel {
+        display: none;
+        grid-column: 1;
+        min-width: 0;
+        margin: 0;
+        padding: 6px 8px;
+        overflow: hidden;
+        background: rgba(0,0,0,.20);
+        border: 1px solid rgba(255,255,255,.22);
+        border-radius: 7px;
+    }
+    #my-hand-panel.hand-visible { display: block; }
+    #my-hand-panel .panel-heading {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 5px;
+        margin: 0 0 4px;
+        padding: 0 0 3px;
+        border-bottom: 1px solid rgba(255,255,255,.18);
+        font-size: 12px;
+        line-height: 1.2;
+    }
+    #my-hand-zone {
+        display: flex;
+        flex-wrap: nowrap;
+        align-items: flex-start;
+        gap: 3px;
+        min-width: 0;
+        min-height: 0;
+        margin: 0;
+        padding: 1px 1px 4px;
+        overflow-x: auto;
+        overflow-y: hidden;
+        overscroll-behavior-x: contain;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: thin;
+    }
+    #my-hand-zone .card {
+        flex: 0 0 auto;
+        width: 40px;
+        height: 60px;
+        margin: 0;
+        font-size: 18px;
+    }
+    #hand-prompt {
+        color: #ffeb3b;
+        font-size: 10px;
+        line-height: 1.25;
+        margin: 2px 0 0;
+    }
+    #rulebook-toggle {
+        grid-column: 2;
+        grid-row: 1;
+        align-self: start;
+        justify-self: end;
+    }
+
+    @media (max-width: 650px) {
+        #game-header {
+            grid-template-columns: minmax(0, 1fr) 76px;
+            align-items: start;
+            gap: 5px;
+            margin-bottom: 5px;
+        }
+        #my-hand-panel { padding: 4px; border-radius: 6px; }
+        #my-hand-panel .panel-heading {
+            font-size: 10px;
+            margin-bottom: 3px;
+            padding-bottom: 3px;
+        }
+        #my-hand-count { font-size: 10px; }
+        #my-hand-zone {
+            gap: 2px;
+            padding: 1px 0 3px;
+        }
+        #my-hand-zone .card {
+            width: clamp(24px, 7.2vw, 31px);
+            height: clamp(36px, 10.8vw, 46px);
+            font-size: 14px;
+            border-radius: 3px;
+        }
+        #hand-prompt {
+            font-size: 9px;
+            line-height: 1.2;
+            margin-top: 2px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        #rulebook-toggle {
+            width: 76px;
+            max-width: 76px;
+            white-space: normal;
+            line-height: 1.2;
+            text-align: center;
+            font-size: 10px;
+            padding: 6px 4px;
+            border-radius: 6px;
+        }
+    }
+
 </style>
 </head>
 <body>
 <div id="game-container">
 <div id="game-header">
-<h1>マッチングビースト</h1>
-<button aria-label="ルールブックを開く" class="btn-rulebook" id="rulebook-toggle" onclick="openRulebookModal()" type="button">📖 ルールブック</button>
+  <section id="my-hand-panel" aria-label="自分の手札">
+    <div class="panel-heading"><strong>自分の手札</strong><span id="my-hand-count">0枚</span></div>
+    <div id="my-hand-zone" class="hand-zone" aria-label="カードを選択する手札"></div>
+    <div id="hand-prompt">ゲーム開始後、ここに手札が表示されます。</div>
+  </section>
+  <button aria-label="ルールブックを開く" class="btn-rulebook" id="rulebook-toggle" onclick="openRulebookModal()" type="button">📖 ルールブック</button>
 </div>
 <section aria-label="オンライン対戦" id="online-panel">
 <h2>🌐 オンライン対戦</h2>
@@ -497,18 +910,38 @@
         </label>
 <button class="btn-action" id="btn-start" onclick="startSoloGame()" style="font-size:15px; padding:6px 16px;">CPUと1人プレイ</button>
 </div>
-<div class="npc-container" id="npcs-container"></div>
-<div id="center-area">
+<div id="game-play-layout" aria-label="対戦画面">
+  <section id="players-grid" aria-label="プレイヤー情報">
+    <div class="npc-container" id="npcs-container"></div>
+    <div id="player-container"></div>
+  </section>
+  <section id="command-panel" aria-label="コマンド一覧">
+    <div id="command-tools">
+      <div class="panel-heading"><strong>コマンド一覧</strong></div>
+      <button type="button" id="log-toggle" onclick="openLogModal()">📜 ログ</button>
+    </div>
+    <div id="center-area">
 <div id="game-info" style="display: none;">
 <span id="turn-info" style="font-size: 15px; font-weight: bold; color: #ffeb3b; margin-right: 15px;"></span>
             山札: <span id="deck-count" style="font-size:15px; font-weight:bold;">0</span> 枚 | 
             墓地: <span id="graveyard-count" style="font-size:15px; font-weight:bold;">0</span> 枚 
             <span id="graveyard-top"></span>
-<div style="font-size: 11px; color: #ccc; margin-top: 5px;">相性: ♠️️ ＞ ❤️ ＞ ♣️️️️️ ＞ ♦️️ ＞ ♠️️ (有利側に+4補正 / ブタは無属性)</div>
+<div style="font-size: 11px; color: #ccc; margin-top: 5px;">相性: ♠️ ＞ ❤️ ＞ ♣️ ＞ ♦️ ＞ ♠️ (有利側に+4補正 / ブタは無属性)</div>
 </div>
 </div>
-<div id="log-box"></div>
-<div id="player-container"></div>
+    <div id="command-list"></div>
+  </section>
+</div>
+</div>
+<div class="modal-overlay" id="log-modal" style="display:none;" onclick="closeLogModalOnOverlay(event)">
+  <div class="modal-content log-modal-content" role="dialog" aria-modal="true" aria-labelledby="log-modal-title" onclick="event.stopPropagation()">
+    <div class="log-modal-header">
+      <h2 id="log-modal-title">📜 ログ一覧</h2>
+      <button type="button" onclick="closeLogModal()" aria-label="ログを閉じる">✕</button>
+    </div>
+    <div id="log-box" aria-live="polite"></div>
+    <button type="button" onclick="closeLogModal()" style="width:100%;padding:10px;margin-top:10px;background:#4c56c8;color:white;">閉じる</button>
+  </div>
 </div>
 <div class="modal-overlay" id="rulebook-modal" style="display: none;">
 <div class="modal-content">
@@ -564,8 +997,8 @@
 <h4>ビースト ✨　手札2枚</h4>
 <ul class="rulebook-list">
 <li>数字が同じで、色が同じカード2枚を使います。</li>
-<li>色の組み合わせは、黒（♠️スペード・♣️️️️クラブ）同士、または赤（❤️ハート・♦️ダイヤ）同士です。</li>
-<li>攻撃力・防御力はカードの数字です。♠️スペード属性なら、通常時の攻撃力・防御力に+1されます。</li>
+<li>色の組み合わせは、黒（♠スペード・♣クラブ）同士、または赤（♥ハート・♦ダイヤ）同士です。</li>
+<li>攻撃力・防御力はカードの数字です。♠スペード属性なら、通常時の攻撃力・防御力に+1されます。</li>
 <li><strong>属性は、召喚時に最初に選んだカードのスート（マーク）</strong>で決まります。</li>
 </ul>
 </div>
@@ -587,7 +1020,7 @@
     </div>
 <div class="rulebook-card">
 <h4>グラトニービースト 🍖　手札1枚＋相手の手札1枚</h4>
-      自分の手札1枚をコストにし、相手の手札から選んだ1枚と組み合わせて召喚します。カードを取られた相手は山札から1枚補充します。攻撃力と属性は、相手から取ったカードを基準に決まり、防御力は<strong>8</strong>（♠️スペード属性なら<strong>9</strong>）です。山札にカードが1枚以上あり、手札を持つ相手がいる必要があります。<br/>
+      自分の手札1枚をコストにし、相手の手札から選んだ1枚と組み合わせて召喚します。カードを取られた相手は山札から1枚補充します。攻撃力と属性は、相手から取ったカードを基準に決まり、防御力は<strong>8</strong>（♠スペード属性なら<strong>9</strong>）です。山札にカードが1枚以上あり、手札を持つ相手がいる必要があります。<br/>
 <strong>維持コスト：</strong>召喚したターンの終了時は除き、その後の自分のターン終了時に、自分の場のユニット1体を墓地へ送ります。グラトニービースト自身を選ぶこともできます。
     </div>
 <div class="rulebook-card">
@@ -606,17 +1039,17 @@
 <li>場にユニットがいない相手へのダイレクトアタックは、相手のHPを2減らします。</li>
 <li>HPが0以下になったプレイヤーは脱落します。脱落者が出てゲームが続く場合、そのプレイヤーの手札・場のカードと、山札・墓地を合わせてシャッフルし、新しい山札にします。</li>
 </ol>
-<div class="rulebook-note"><strong>ハート属性の耐久効果：</strong>❤️ハート属性のユニットは、最初に受けた撃破可能な攻撃を1回耐え、タップ状態になります。その攻撃では撃破されず、通常の撃破ダメージも発生しません。タップ後に再び撃破可能な攻撃を受けると、通常どおり撃破されます。</div>
+<div class="rulebook-note"><strong>ハート属性の耐久効果：</strong>♥ハート属性のユニットは、最初に受けた撃破可能な攻撃を1回耐え、タップ状態になります。その攻撃では撃破されず、通常の撃破ダメージも発生しません。タップ後に再び撃破可能な攻撃を受けると、通常どおり撃破されます。</div>
 </section>
 <section class="rulebook-section">
 <h3>6. 属性相性と各スートの効果</h3>
-<div class="rulebook-intro"><strong>属性相性：</strong>♠️スペード ＞ ❤️ハート ＞ ♣️️️️クラブ ＞ ♦️ダイヤ ＞ ♠️スペード<br/>
+<div class="rulebook-intro"><strong>属性相性：</strong>♠スペード ＞ ♥ハート ＞ ♣クラブ ＞ ♦ダイヤ ＞ ♠スペード<br/>
       相性で有利な側の攻撃力または防御力に<strong>+4</strong>します。相性はビースト同士の戦闘で適用され、属性を持たないブタには適用されません。</div>
 <ul class="rulebook-list">
-<li><strong>♠️ スペード：</strong>通常時の攻撃力・防御力が+1になります。</li>
-<li><strong>❤️ ハート：</strong>上記のとおり、撃破可能な攻撃を1回耐えてタップ状態になります。</li>
-<li>♦️ <strong>ダイヤ：</strong>自分の♦️️属性ユニットが相手ユニットを撃破したとき、その持ち主に追加で1ダメージを与えます。</li>
-<li><strong>♣️️️️ クラブ：</strong>自分の♣️️️️属性ユニットがダイレクトアタックに成功すると、次のどちらかを選びます。
+<li><strong>♠ スペード：</strong>通常時の攻撃力・防御力が+1になります。</li>
+<li><strong>♥ ハート：</strong>上記のとおり、撃破可能な攻撃を1回耐えてタップ状態になります。</li>
+<li>♦ <strong>ダイヤ：</strong>自分の♦属性ユニットが相手ユニットを撃破したとき、その持ち主に追加で1ダメージを与えます。</li>
+<li><strong>♣ クラブ：</strong>自分の♣属性ユニットがダイレクトアタックに成功すると、次のどちらかを選びます。
         <ul class="rulebook-sublist">
 <li>場のユニット1体を効果破壊する（通常の撃破ダメージは発生しません）。</li>
 <li>カードを1枚引く。山札・相手の手札・墓地から選べます。</li>
@@ -640,7 +1073,7 @@
 <script src="/socket.io/socket.io.js"></script>
 <script>
 const SUITS = ['spade', 'club', 'heart', 'diamond'];
-const SUIT_ICONS = { spade: '♠️️', heart: '❤️', club: '♣️️️️', diamond: '♦️️️' };
+const SUIT_ICONS = { spade: '♠️', heart: '❤️', club: '♣️', diamond: '♦️' };
 const SUIT_ORDER = { spade: 0, club: 1, heart: 2, diamond: 3 };
 const SUIT_COLOR_GROUP = { spade: 0, club: 0, heart: 1, diamond: 1 }; 
 const BLACK_SUITS = ['spade', 'club'];
@@ -675,6 +1108,78 @@ const cpuSleep = async (ms) => {
 
 function openRulebookModal() { document.getElementById('rulebook-modal').style.display = 'flex'; }
 function closeRulebookModal() { document.getElementById('rulebook-modal').style.display = 'none'; }
+function openOpponentHandPicker(targetPId, mode) {
+    const targetP = players[targetPId];
+    const expectedPhase = {
+        steal: 'SELECT_TARGET_HAND',
+        club: 'CLUB_SELECT_TARGET_HAND',
+        gluttony: 'SELECT_GLUTTONY_STEAL_TARGET'
+    }[mode];
+    if (!isGameStarted || !targetP || !targetP.alive || targetP.hand.length === 0 || currentPhase !== expectedPhase) return;
+
+    // 1枚しかなければ選択画面を挟まず、そのカードを選ぶ。
+    if (targetP.hand.length === 1) {
+        chooseOpponentHandCard(targetPId, 0, mode);
+        return;
+    }
+
+    const previous = document.getElementById('opponent-hand-picker');
+    if (previous) previous.remove();
+
+    const overlay = document.createElement('div');
+    overlay.id = 'opponent-hand-picker';
+    overlay.className = 'modal-overlay';
+    overlay.setAttribute('role', 'presentation');
+    overlay.addEventListener('click', event => {
+        if (event.target === overlay) overlay.remove();
+    });
+
+    const dialog = document.createElement('div');
+    dialog.className = 'modal-content opponent-hand-picker-content';
+    dialog.setAttribute('role', 'dialog');
+    dialog.setAttribute('aria-modal', 'true');
+    const title = mode === 'gluttony'
+        ? '🍖 グラトニー：抜き取るカードを選択'
+        : (mode === 'club' ? '♣️ 引くカードを選択' : '🃏 相手の手札から引くカードを選択');
+    dialog.innerHTML = `
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+            <h2>${title}</h2>
+            <button type="button" aria-label="閉じる" class="opponent-hand-picker-close">✕</button>
+        </div>
+        <p style="font-size:12px;color:#ddd;margin:8px 0 0;">裏向きのカードを1枚選んでください。</p>
+        <div class="opponent-hand-picker-grid" aria-label="相手の裏向きの手札"></div>
+        <button type="button" class="opponent-hand-picker-cancel" style="width:100%;margin-top:5px;">キャンセル</button>
+    `;
+    const closePicker = () => overlay.remove();
+    dialog.querySelector('.opponent-hand-picker-close').addEventListener('click', closePicker);
+    dialog.querySelector('.opponent-hand-picker-cancel').addEventListener('click', closePicker);
+
+    const grid = dialog.querySelector('.opponent-hand-picker-grid');
+    for (let idx = 0; idx < targetP.hand.length; idx++) {
+        const choice = document.createElement('button');
+        choice.type = 'button';
+        choice.className = 'opponent-hand-choice';
+        choice.setAttribute('aria-label', `裏向きのカード ${idx + 1} を選択`);
+        choice.innerHTML = `<div class="card back"></div><span>${idx + 1}</span>`;
+        choice.addEventListener('click', () => chooseOpponentHandCard(targetPId, idx, mode));
+        grid.appendChild(choice);
+    }
+
+    overlay.appendChild(dialog);
+    document.body.appendChild(overlay);
+}
+
+function chooseOpponentHandCard(targetPId, cardIdx, mode) {
+    const picker = document.getElementById('opponent-hand-picker');
+    if (picker) picker.remove();
+    if (mode === 'steal') handleStealCard(targetPId, cardIdx);
+    else if (mode === 'club') handleClubStealCard(targetPId, cardIdx);
+    else if (mode === 'gluttony') handleGluttonyStealCard(targetPId, cardIdx);
+}
+
+function openLogModal() { document.getElementById('log-modal').style.display = 'flex'; const box = document.getElementById('log-box'); if (box) box.scrollTop = box.scrollHeight; }
+function closeLogModal() { document.getElementById('log-modal').style.display = 'none'; }
+function closeLogModalOnOverlay(event) { if (event.target && event.target.id === 'log-modal') closeLogModal(); }
 
 function addLog(msg, type = 'normal') {
     const box = document.getElementById('log-box');
@@ -890,6 +1395,8 @@ function startGame() {
     if (networkRole === 'host' && onlineRoom && !onlineRoom.started) { alert('オンライン部屋では「対戦開始（空席はCPU）」を押してください。'); return; }
     isGameStarted = true;
     isGameOver = false;
+    document.getElementById('game-play-layout').classList.add('game-active');
+    document.getElementById('setup-panel').style.display = 'none';
     document.getElementById('online-panel').classList.add('match-started');
     document.getElementById('game-info').style.display = 'block';
     document.getElementById('log-box').innerHTML = '';
@@ -1131,7 +1638,7 @@ function handleClubChooseEffect(choice) {
         const totalUnits = players.reduce((sum, pl) => sum + pl.field.length, 0);
         if (totalUnits > 0) {
             currentPhase = 'CLUB_SELECT_DESTROY_TARGET';
-            addLog(`♣️️️効果：効果破壊するフィールド上のユニットを選択してください。`, 'important');
+            addLog(`♣効果：効果破壊するフィールド上のユニットを選択してください。`, 'important');
         } else {
             alert("フィールド上に破壊できるユニットが存在しません。1ドローを選択します。");
             currentPhase = 'CLUB_DRAW_CHOICE';
@@ -1146,7 +1653,7 @@ function handleClubDrawFromDeck() {
     const p = players[turnIndex];
     const card = performDraw(p, 'deck');
     const cardInfo = (networkRole === 'solo' && card) ? ` [${SUIT_ICONS[card.suit]}${card.val}]` : '';
-    addLog(`♣️️️️効果発動！ ${p.name} は山札からカード${cardInfo}を1枚引いた。`, 'attack');
+    addLog(`♣️効果発動！ ${p.name} は山札からカード${cardInfo}を1枚引いた。`, 'attack');
     afterClubDraw();
 }
 
@@ -1198,7 +1705,7 @@ function handleClubStealCard(targetPId, cardIdx) {
 
     const card = performDraw(p, 'steal', targetPId, cardIdx);
     const cardInfo = (networkRole === 'solo' && card) ? ` [${SUIT_ICONS[card.suit]}${card.val}]` : '';
-    addLog(`♣️️️効果発動！ ${p.name} は ${targetP.name} の手札からカード${cardInfo}を1枚引いた！`, 'attack');
+    addLog(`♣効果発動！ ${p.name} は ${targetP.name} の手札からカード${cardInfo}を1枚引いた！`, 'attack');
     addLog(`🔄 ${targetP.name} は山札からカードを1枚補充した。`);
     afterClubDraw();
 }
@@ -1216,7 +1723,7 @@ function handleSelectClubDestroyTarget(targetPId, uIdx) {
 
     sendUnitToGraveyard(targetUnit);
     targetP.field.splice(uIdx, 1);
-    addLog(`💥 ♣️️️️効果発動！ ${targetP.name} の ${uName} を効果破壊した！（被ダメージ0点）`, 'attack');
+    addLog(`💥 ♣️効果発動！ ${targetP.name} の ${uName} を効果破壊した！（被ダメージ0点）`, 'attack');
 
     renderBoard();
     finishTurn();
@@ -1359,7 +1866,7 @@ function handleSummonBeast() {
     const c2 = p.hand[selectedHandIndices[1]];
 
     if (c1.val !== c2.val || !isSameColor(c1.suit, c2.suit)) {
-        alert("同じ数字かつ同色のペア（♠️/♣️️️️ または ❤️/♦️）を選んでください。");
+        alert("同じ数字かつ同色のペア（♠/♣️ または ❤️/♦）を選んでください。");
         return;
     }
 
@@ -1773,7 +2280,7 @@ async function executeAttack(attackerP, attackerUnit, defenderP, defenderUnit) {
                     const targetUName = defenderUnitName(target.unit);
                     sendUnitToGraveyard(target.unit);
                     target.player.field.splice(target.uIdx, 1);
-                    addLog(`💥 ♣️️️️効果発動！ ${attackerP.name} は ${target.player.name} の ${targetUName} を効果破壊した！（被ダメージ0点）`, 'attack');
+                    addLog(`💥 ♣️効果発動！ ${attackerP.name} は ${target.player.name} の ${targetUName} を効果破壊した！（被ダメージ0点）`, 'attack');
                     currentPhase = 'WAIT';
                     renderBoard();
                     await cpuSleep(800);
@@ -1790,20 +2297,20 @@ async function executeAttack(attackerP, attackerUnit, defenderP, defenderUnit) {
 
                     if (gyPairChoice !== -1) {
                         performDraw(attackerP, 'graveyard', null, null, gyPairChoice);
-                        addLog(`♣️️️️効果発動！ ${attackerP.name} は墓地から手札とペアになるカードを引き当てた！`, 'attack');
+                        addLog(`♣効果発動！ ${attackerP.name} は墓地から手札とペアになるカードを引き当てた！`, 'attack');
                     } else if (livingOpponents.length > 0) {
                         livingOpponents.sort((a, b) => b.hand.length - a.hand.length || b.hp - a.hp);
                         const targetP = livingOpponents[0];
                         const cardIdx = Math.floor(Math.random() * targetP.hand.length);
                         const card = performDraw(attackerP, 'steal', targetP.id, cardIdx);
                         const cardInfo = (networkRole === 'solo' && targetP.id === 0 && card) ? ` [${SUIT_ICONS[card.suit]}${card.val}]` : '';
-                        addLog(`♣️️️️️効果発動！ ${attackerP.name} は ${targetP.name} の手札からカード${cardInfo}を1枚引いた！`, 'attack');
+                        addLog(`♣️効果発動！ ${attackerP.name} は ${targetP.name} の手札からカード${cardInfo}を1枚引いた！`, 'attack');
                         addLog(`🔄 ${targetP.name} は山札からカードを1枚補充した。`);
                     } else if (graveyard.length > 0) {
                         performDraw(attackerP, 'graveyard', null, null, 0);
                     } else {
                         performDraw(attackerP, 'deck');
-                        addLog(`♣️️️️効果発動！ ${attackerP.name} は山札から1枚引いた。`, 'attack');
+                        addLog(`♣効果発動！ ${attackerP.name} は山札から1枚引いた。`, 'attack');
                     }
                     currentPhase = 'WAIT';
                     renderBoard();
@@ -1813,7 +2320,7 @@ async function executeAttack(attackerP, attackerUnit, defenderP, defenderUnit) {
                 }
             } else {
                 currentPhase = 'CLUB_CHOICE';
-                addLog(`♣️️️️️効果発動！ 発動する効果を選択してください。`, 'important');
+                addLog(`♣️効果発動！ 発動する効果を選択してください。`, 'important');
                 renderBoard();
                 return;
             }
@@ -1870,7 +2377,7 @@ async function executeAttack(attackerP, attackerUnit, defenderP, defenderUnit) {
             }
 
             if (attackerUnit.suit === 'diamond' && defenderP.alive) {
-                addLog(`♦️️効果発動！ ${defenderP.name} に追加1ダメージ！`, 'attack');
+                addLog(`♦️効果発動！ ${defenderP.name} に追加1ダメージ！`, 'attack');
                 defenderP.hp -= 1;
             }
 
@@ -2462,38 +2969,35 @@ function renderBoard() {
 
     document.getElementById('turn-info').innerText = `【${turnName} のターン】 フェイズ: ${phaseText}`;
 
-    const npcsContainer = document.getElementById('npcs-container');
-    const playerContainer = document.getElementById('player-container');
-    npcsContainer.innerHTML = '';
-    playerContainer.innerHTML = '';
+    const playersGrid = document.getElementById('players-grid');
+    const commandContainer = document.getElementById('command-list');
+    const previousHandContainer = document.getElementById('my-hand-zone');
+    const previousHandScrollLeft = previousHandContainer ? previousHandContainer.scrollLeft : 0;
+    playersGrid.querySelectorAll('.npc-area, .player-area').forEach(node => node.remove());
+    commandContainer.innerHTML = '';
 
     players.forEach((p) => {
         const isPlayer = p.id === localPlayerId;
         const isCurrentTurn = p.id === turnIndex;
         const area = document.createElement('div');
-        area.className = isPlayer ? 'player-area' : 'npc-area';
+        area.className = (isPlayer ? 'player-area' : 'npc-area') + ` seat-${p.id}`;
         if (isCurrentTurn) area.classList.add('my-turn');
 
-        let drawPhaseMsg = '';
-        if (isPlayer && isCurrentTurn && (currentPhase === 'DRAW_CHOICE' || currentPhase === 'SELECT_TARGET_HAND' || currentPhase === 'SELECT_GRAVEYARD_CARD')) {
-            drawPhaseMsg = ' <span style="font-size: 11px; color: #ffeb3b; font-weight: normal; margin-left: 8px;">⚠️ ドローフェイズのため手札を選択できません</span>';
-        }
-
         let handHtml = '';
-        p.hand.forEach((card, idx) => {
-            const isSelected = isPlayer && selectedHandIndices.includes(idx);
+        if (!isPlayer && p.hand.length > 0) {
             let customClick = '';
-            if (isGameStarted && !isPlayer && p.alive && p.hand.length > 0) {
+            if (isGameStarted && p.alive) {
                 if (currentPhase === 'SELECT_TARGET_HAND') {
-                    customClick = `handleStealCard(${p.id}, ${idx})`;
+                    customClick = `openOpponentHandPicker(${p.id}, 'steal')`;
                 } else if (currentPhase === 'CLUB_SELECT_TARGET_HAND') {
-                    customClick = `handleClubStealCard(${p.id}, ${idx})`;
+                    customClick = `openOpponentHandPicker(${p.id}, 'club')`;
                 } else if (currentPhase === 'SELECT_GLUTTONY_STEAL_TARGET') {
-                    customClick = `handleGluttonyStealCard(${p.id}, ${idx})`;
+                    customClick = `openOpponentHandPicker(${p.id}, 'gluttony')`;
                 }
             }
-            handHtml += createCardHtml(card, !isPlayer, isPlayer ? idx : -1, isSelected, customClick);
-        });
+            // 相手の手札は枚数だけ表示し、選択用の裏向きカードは代表1枚にする。
+            handHtml = createCardHtml({ suit: 'spade', val: 1 }, true, -1, false, customClick);
+        }
 
         let fieldHtml = '';
         p.field.forEach((unit, uIdx) => {
@@ -2514,12 +3018,12 @@ function renderBoard() {
                     <span class="hp-badge">HP: ${p.hp} ${!p.alive ? '(脱落)' : ''}</span>
                 </div>
             </div>
-            <div>
-                <span class="zone-title">手札 (${p.hand.length}枚)${drawPhaseMsg}</span>
-                <div class="hand-zone">
-                    ${handHtml || '<span style="font-size:11px; color:#888;">(なし)</span>'}
-                </div>
-            </div>
+            ${!isPlayer ? `
+              <div class="opponent-hand-area">
+                <span class="zone-title">手札 ${p.hand.length}枚</span>
+                <div class="hand-zone">${handHtml || '<span style="font-size:10px; color:#888;">(なし)</span>'}</div>
+              </div>
+            ` : ''}
             <div class="board-section">
                 <div class="zone">
                     <span class="zone-title">フィールド (${p.field.length}体)</span>
@@ -2548,7 +3052,7 @@ function renderBoard() {
                     const gyText = hasGyPair ? '✨ 🪦 墓地から引く (ペア作成可能！)' : '🪦 墓地から引く (上2枚から選択)';
                     actionHtml += `<button class="${gyClass}" ${gyDisabled} onclick="handleDrawFromGraveyard()">${gyText}</button>`;
                 } else if (currentPhase === 'SELECT_TARGET_HAND') {
-                    actionHtml += `<span style="font-size:11px; color:#ffeb3b; align-self:center;">💡 上の相手の手札（裏向きカード）を1枚選んでクリックしてください</span>`;
+                    actionHtml += `<span style="font-size:11px; color:#ffeb3b; align-self:center;">💡 相手の情報欄の裏向きカードを押し、表示された一覧から1枚選んでください</span>`;
                     actionHtml += `<button onclick="handleCancelStealMode()">もとに戻る</button>`;
                 } else if (currentPhase === 'SELECT_GRAVEYARD_CARD' || currentPhase === 'CLUB_SELECT_GRAVEYARD_CARD') {
                     const isClub = currentPhase === 'CLUB_SELECT_GRAVEYARD_CARD';
@@ -2586,7 +3090,7 @@ function renderBoard() {
                     const gyDisabled = graveyard.length === 0 ? 'disabled' : '';
                     actionHtml += `<button class="btn-attack" ${gyDisabled} onclick="handleClubDrawFromGraveyard()">🪦 墓地から引く</button>`;
                 } else if (currentPhase === 'CLUB_SELECT_TARGET_HAND') {
-                    actionHtml += `<span style="font-size:11px; color:#ffeb3b; align-self:center;">💡 上の相手の手札（裏向きカード）を1枚選んでクリックしてください</span>`;
+                    actionHtml += `<span style="font-size:11px; color:#ffeb3b; align-self:center;">💡 相手の情報欄の裏向きカードを押し、表示された一覧から1枚選んでください</span>`;
                     actionHtml += `<button onclick="handleCancelClubStealMode()">もとに戻る</button>`;
                 } else if (currentPhase === 'CLUB_SELECT_DESTROY_TARGET') {
                     actionHtml += `<span style="font-size:11px; color:#ffeb3b; align-self:center;">💡 破壊するフィールド上のユニットをクリックしてください</span>`;
@@ -2606,7 +3110,7 @@ function renderBoard() {
                     
                     actionHtml += `<button onclick="handleSkipSummon()">⏭ 召喚スキップ</button>`;
                 } else if (currentPhase === 'SELECT_GLUTTONY_STEAL_TARGET') {
-                    actionHtml += `<span style="font-size:11px; color:#ffeb3b; align-self:center;">💡 抜き取る相手の手札（裏向きカード）を1枚選んでクリックしてください</span>`;
+                    actionHtml += `<span style="font-size:11px; color:#ffeb3b; align-self:center;">💡 相手の情報欄の裏向きカードを押し、表示された一覧から1枚選んでください</span>`;
                     actionHtml += `<button onclick="handleCancelGluttonySteal()">もとに戻る</button>`;
                 } else if (currentPhase === 'SELECT_ADVENT_GRAVEYARD_CARD') {
                     const topCard = graveyard[graveyard.length - 1];
@@ -2633,16 +3137,47 @@ function renderBoard() {
                 }
 
                 actions.innerHTML = actionHtml;
-                area.appendChild(actions);
+                commandContainer.appendChild(actions);
             }
         }
 
-        if (isPlayer) {
-            playerContainer.appendChild(area);
-        } else {
-            npcsContainer.appendChild(area);
-        }
+        playersGrid.appendChild(area);
     });
+
+    const myPlayer = players.find(p => p.id === localPlayerId);
+    const handContainer = document.getElementById('my-hand-zone');
+    const handCountNode = document.getElementById('my-hand-count');
+    const handPrompt = document.getElementById('hand-prompt');
+    if (myPlayer && handContainer && handCountNode && handPrompt) {
+        handContainer.innerHTML = myPlayer.hand.map((card, idx) =>
+            createCardHtml(card, false, idx, selectedHandIndices.includes(idx))
+        ).join('') || '<span style="font-size:11px;color:#aaa;">（手札なし）</span>';
+        handContainer.scrollLeft = previousHandScrollLeft;
+        handCountNode.textContent = `${myPlayer.hand.length}枚`;
+        let prompt = 'カードをクリックして選択します。';
+        if (!myPlayer.alive) prompt = 'あなたは脱落しています。';
+        else if (isGameOver) prompt = 'ゲーム終了';
+        else if (turnIndex !== localPlayerId) prompt = `${players[turnIndex] ? players[turnIndex].name : '相手'}のターンです。`;
+        else if (currentPhase === 'DRAW_CHOICE') prompt = 'ドローする前は手札を選択できません。';
+        else if (currentPhase === 'SELECT_TARGET_HAND') prompt = '相手の情報欄の裏向きカードを押し、一覧から1枚選んでください。';
+        else if (currentPhase === 'SELECT_GLUTTONY_STEAL_TARGET') prompt = '相手の情報欄の裏向きカードを押し、一覧から1枚選んでください。';
+        else if (currentPhase === 'SUMMON' && selectedHandIndices.length === 1) prompt = 'もう1枚選ぶか、召喚コマンドを押してください。';
+        else if (currentPhase === 'SUMMON') prompt = '通常召喚には手札2枚を選びます。';
+        handPrompt.textContent = prompt;
+    } else if (handContainer && handCountNode && handPrompt) {
+        handContainer.innerHTML = '';
+        handCountNode.textContent = '0枚';
+        handPrompt.textContent = '自分の手札はここに表示されます。';
+    }
+    if (!commandContainer.children.length) {
+        const empty = document.createElement('p');
+        empty.className = 'command-empty';
+        empty.textContent = isGameOver ? 'ゲームは終了しました。' : (myPlayer && !myPlayer.alive ? 'あなたは脱落しています。' : 'あなたのターンになると操作ボタンが表示されます。');
+        commandContainer.appendChild(empty);
+    }
+    document.getElementById('game-play-layout').classList.toggle('game-active', !!isGameStarted);
+    const topHandPanel = document.getElementById('my-hand-panel');
+    if (topHandPanel) topHandPanel.classList.toggle('hand-visible', !!isGameStarted);
     if (networkRole === 'host' && !remoteStateApplying) broadcastNetworkState();
 }
 
@@ -2751,6 +3286,7 @@ function applyNetworkSnapshot(state) {
       isGameOver = !!state.isGameOver;
       isGameStarted = !!state.isGameStarted;
       document.getElementById('online-panel').classList.toggle('match-started', isGameStarted);
+      document.getElementById('game-play-layout').classList.toggle('game-active', isGameStarted);
       isFirstRound = state.isFirstRound || [true,true,true,true];
       cpuDifficulty = state.cpuDifficulty || 'counter';
       jokerRuleSetting = state.jokerRuleSetting || 'all';
